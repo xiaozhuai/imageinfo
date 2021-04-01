@@ -661,7 +661,6 @@ private:
 
 
                             std::string type = ri.readString(12, 4);
-                            // 20
                             if (type == "VP8 " && length >= 30) {
                                 width = ri.readU16LE(26) & 0x3FFF;
                                 height = ri.readU16LE(28) & 0x3FFF;
