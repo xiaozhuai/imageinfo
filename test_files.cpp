@@ -5,6 +5,7 @@
 #include <iostream>
 #include <sstream>
 #include <fstream>
+#include <cassert>
 #include "imageinfo.hpp"
 
 int get_image_info(const std::string &file) {

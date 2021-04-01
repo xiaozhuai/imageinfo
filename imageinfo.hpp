@@ -19,7 +19,9 @@
 #ifdef _WIN32
 #include <winsock.h>
 #else
+
 #include <arpa/inet.h>
+
 #endif
 
 enum IIFormat {
@@ -266,6 +268,13 @@ typedef std::function<void(size_t length, IIReadInterface &ri, bool &match, int6
                            int64_t &height)> IIProcessFunc;
 
 struct IIDetector {
+    IIDetector(IIFormat f, const char *e, const char *fe, const char *mt, IIProcessFunc p)
+            : format(f),
+              ext(e),
+              fullExt(fe),
+              mimetype(mt),
+              process(std::move(p)) {}
+
     IIFormat format;
     const char *ext;
     const char *fullExt;
@@ -368,13 +377,12 @@ private:
         return {
                 ///////////////////////// BMP /////////////////////////
                 // https://www.fileformat.info/format/bmp/corion.htm
-                IIDetector{
-                        .format = II_FORMAT_BMP,
-                        .ext = "bmp",
-                        .fullExt = "bmp",
-                        .mimetype = "image/bmp",
-                        .process = [](size_t length, IIReadInterface &ri,
-                                      bool &match, int64_t &width, int64_t &height) {
+                IIDetector(
+                        II_FORMAT_BMP,
+                        "bmp",
+                        "bmp",
+                        "image/bmp",
+                        [](size_t length, IIReadInterface &ri, bool &match, int64_t &width, int64_t &height) {
                             match = length >= 26
                                     && ri.cmp(0, 2, "BM");
                             if (!match) return;
@@ -383,17 +391,16 @@ private:
                             width = abs(ri.readS32LE(18));
                             height = abs(ri.readS32LE(22));
                         }
-                },
+                ),
 
                 ///////////////////////// GIF /////////////////////////
                 // https://www.fileformat.info/format/gif/corion.htm
-                IIDetector{
-                        .format = II_FORMAT_GIF,
-                        .ext = "gif",
-                        .fullExt = "gif",
-                        .mimetype = "image/gif",
-                        .process = [](size_t length, IIReadInterface &ri,
-                                      bool &match, int64_t &width, int64_t &height) {
+                IIDetector(
+                        II_FORMAT_GIF,
+                        "gif",
+                        "gif",
+                        "image/gif",
+                        [](size_t length, IIReadInterface &ri, bool &match, int64_t &width, int64_t &height) {
                             match = length >= 10
                                     && ri.cmpOneOf(0, 6, {"GIF87a", "GIF89a"});
                             if (!match) return;
@@ -401,17 +408,16 @@ private:
                             width = ri.readU16LE(6);
                             height = ri.readU16LE(8);
                         }
-                },
+                ),
 
                 ///////////////////////// HDR /////////////////////////
                 // http://paulbourke.net/dataformats/pic/
-                IIDetector{
-                        .format = II_FORMAT_HDR,
-                        .ext = "hdr",
-                        .fullExt = "hdr",
-                        .mimetype = "image/vnd.radiance",
-                        .process = [](size_t length, IIReadInterface &ri,
-                                      bool &match, int64_t &width, int64_t &height) {
+                IIDetector(
+                        II_FORMAT_HDR,
+                        "hdr",
+                        "hdr",
+                        "image/vnd.radiance",
+                        [](size_t length, IIReadInterface &ri, bool &match, int64_t &width, int64_t &height) {
                             match = length >= 6
                                     && ri.cmpOneOf(0, 6, {"#?RGBE", "#?XYZE"});
                             if (!match) return;
@@ -439,17 +445,16 @@ private:
                             width = std::stol(header.substr(xPosBegin, xPosEnd));
                             height = std::stol(header.substr(yPosBegin, yPosEnd));
                         }
-                },
+                ),
 
                 ///////////////////////// JPEG /////////////////////////
                 // https://www.fileformat.info/format/jpeg/corion.htm
-                IIDetector{
-                        .format = II_FORMAT_JPEG,
-                        .ext = "jpg",
-                        .fullExt = "jpeg",
-                        .mimetype = "image/jpeg",
-                        .process = [](size_t length, IIReadInterface &ri,
-                                      bool &match, int64_t &width, int64_t &height) {
+                IIDetector(
+                        II_FORMAT_JPEG,
+                        "jpg",
+                        "jpeg",
+                        "image/jpeg",
+                        [](size_t length, IIReadInterface &ri, bool &match, int64_t &width, int64_t &height) {
                             match = length >= 2
                                     && ri.cmp(0, 2, "\xFF\xD8");
                             if (!match) return;
@@ -468,17 +473,16 @@ private:
                                 offset += sectionSize;
                             }
                         }
-                },
+                ),
 
                 ///////////////////////// PNG /////////////////////////
                 // https://www.fileformat.info/format/png/corion.htm
-                IIDetector{
-                        .format = II_FORMAT_PNG,
-                        .ext = "png",
-                        .fullExt = "png",
-                        .mimetype = "image/png",
-                        .process = [](size_t length, IIReadInterface &ri,
-                                      bool &match, int64_t &width, int64_t &height) {
+                IIDetector(
+                        II_FORMAT_PNG,
+                        "png",
+                        "png",
+                        "image/png",
+                        [](size_t length, IIReadInterface &ri, bool &match, int64_t &width, int64_t &height) {
                             match = length >= 4
                                     && ri.cmp(0, 4, "\x89PNG");
                             if (!match) return;
@@ -494,16 +498,15 @@ private:
                                 }
                             }
                         }
-                },
+                ),
 
                 ///////////////////////// PSD /////////////////////////
-                IIDetector{
-                        .format = II_FORMAT_PSD,
-                        .ext = "psd",
-                        .fullExt = "psd",
-                        .mimetype = "image/psd",
-                        .process = [](size_t length, IIReadInterface &ri,
-                                      bool &match, int64_t &width, int64_t &height) {
+                IIDetector(
+                        II_FORMAT_PSD,
+                        "psd",
+                        "psd",
+                        "image/psd",
+                        [](size_t length, IIReadInterface &ri, bool &match, int64_t &width, int64_t &height) {
                             match = length >= 22
                                     && ri.cmp(0, 6, "8BPS\x00\x01");
                             if (!match) return;
@@ -511,17 +514,16 @@ private:
                             height = ri.readU32BE(14);
                             width = ri.readU32BE(18);
                         }
-                },
+                ),
 
                 ///////////////////////// TIFF /////////////////////////
                 // https://www.fileformat.info/format/tiff/corion.htm
-                IIDetector{
-                        .format = II_FORMAT_TIFF,
-                        .ext = "tif",
-                        .fullExt = "tiff",
-                        .mimetype = "image/tiff",
-                        .process = [](size_t length, IIReadInterface &ri,
-                                      bool &match, int64_t &width, int64_t &height) {
+                IIDetector(
+                        II_FORMAT_TIFF,
+                        "tif",
+                        "tiff",
+                        "image/tiff",
+                        [](size_t length, IIReadInterface &ri, bool &match, int64_t &width, int64_t &height) {
                             match = length >= 4
                                     && ri.cmpOneOf(0, 4, {"\x49\x49\x2A\x00", "\x4D\x4D\x00\x2A"});
                             if (!match) return;
@@ -558,17 +560,16 @@ private:
                                 }
                             }
                         }
-                },
+                ),
 
                 ///////////////////////// WEBP /////////////////////////
                 // https://developers.google.com/speed/webp/docs/riff_container
-                IIDetector{
-                        .format = II_FORMAT_WEBP,
-                        .ext = "webp",
-                        .fullExt = "webp",
-                        .mimetype = "image/webp",
-                        .process = [](size_t length, IIReadInterface &ri,
-                                      bool &match, int64_t &width, int64_t &height) {
+                IIDetector(
+                        II_FORMAT_WEBP,
+                        "webp",
+                        "webp",
+                        "image/webp",
+                        [](size_t length, IIReadInterface &ri, bool &match, int64_t &width, int64_t &height) {
                             match = length >= 16
                                     && ri.cmp(0, 4, "RIFF")
                                     && ri.cmp(8, 4, "WEBP");
@@ -596,17 +597,16 @@ private:
                                 }
                             }
                         }
-                },
+                ),
 
                 ///////////////////////// TGA /////////////////////////
                 // https://www.fileformat.info/format/tga/corion.htm
-                IIDetector{
-                        .format = II_FORMAT_TGA,
-                        .ext = "tga",
-                        .fullExt = "tga",
-                        .mimetype = "image/tga",
-                        .process = [](size_t length, IIReadInterface &ri,
-                                      bool &match, int64_t &width, int64_t &height) {
+                IIDetector(
+                        II_FORMAT_TGA,
+                        "tga",
+                        "tga",
+                        "image/tga",
+                        [](size_t length, IIReadInterface &ri, bool &match, int64_t &width, int64_t &height) {
 
                             // TODO Not rigorous enough, keep it as last detector
                             if (length < 18) {
@@ -668,7 +668,7 @@ private:
 
                             match = false;
                         }
-                },
+                ),
 
         };
     }
