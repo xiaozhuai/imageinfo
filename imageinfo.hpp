@@ -471,8 +471,9 @@ private:
                                     && ri.cmp(0, 2, "BM");
                             if (!match) return;
 
-                            // bmp size can be negative, when is negative number, it means flip
                             width = abs(ri.readS32LE(18));
+
+                            // bmp height can be negative, it means flip Y
                             height = abs(ri.readS32LE(22));
                         }
                 ),
@@ -545,9 +546,10 @@ private:
 
                             int offset = 2;
                             for (; offset + 10 <= length;) {
-                                if (ri.cmpOneOf(offset, 2,
-                                                {"\xFF\xC0", "\xFF\xC1",
-                                                 "\xFF\xC2"})) {    // Found SOF0, SOF1 or SOF2 entry
+                                // 0xFFC0 is baseline standard (SOF0)
+                                // 0xFFC1 is baseline optimized (SOF1)
+                                // 0xFFC2 is progressive (SOF2)
+                                if (ri.cmpOneOf(offset, 2, {"\xFF\xC0", "\xFF\xC1", "\xFF\xC2"})) {
                                     height = ri.readU16BE(offset + 5);
                                     width = ri.readU16BE(offset + 7);
                                     break;
