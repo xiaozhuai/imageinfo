@@ -16,13 +16,18 @@
 #include <array>
 #include <cstdio>
 
-#ifdef _WIN32
-#include <winsock.h>
-#else
-
-#include <arpa/inet.h>
-
-#endif
+template<typename T>
+inline T __ii_swap_endian(T u) {
+    static_assert(CHAR_BIT == 8, "CHAR_BIT != 8");
+    union {
+        T u;
+        uint8_t u8[sizeof(T)];
+    } source, dest;
+    source.u = u;
+    for (size_t k = 0; k < sizeof(T); k++)
+        dest.u8[k] = source.u8[sizeof(T) - k - 1];
+    return dest.u;
+}
 
 enum IIFormat {
     II_FORMAT_UNKNOWN = 0,
@@ -170,7 +175,7 @@ public:
     inline uint16_t readU16BE(off_t offset) {
         uint16_t val;
         read(&val, offset, sizeof(uint16_t));
-        val = ntohs(val);
+        val = __ii_swap_endian<uint16_t>(val);
         return val;
     }
 
@@ -183,7 +188,7 @@ public:
     inline int16_t readS16BE(off_t offset) {
         int16_t val;
         read(&val, offset, sizeof(int16_t));
-        val = ntohs(val);
+        val = __ii_swap_endian<int16_t>(val);
         return val;
     }
 
@@ -196,7 +201,7 @@ public:
     inline uint32_t readU32BE(off_t offset) {
         uint32_t val;
         read(&val, offset, sizeof(uint32_t));
-        val = ntohl(val);
+        val = __ii_swap_endian<uint32_t>(val);
         return val;
     }
 
@@ -209,7 +214,7 @@ public:
     inline int32_t readS32BE(off_t offset) {
         int32_t val;
         read(&val, offset, sizeof(int32_t));
-        val = ntohl(val);
+        val = __ii_swap_endian<int32_t>(val);
         return val;
     }
 
@@ -222,7 +227,7 @@ public:
 //    inline uint64_t readU64BE(off_t offset) {
 //        uint64_t val;
 //        read(&val, offset, sizeof(uint64_t));
-//        val = ntohll(val);
+//        val = __ii_swap_endian<uint64_t>(val);
 //        return val;
 //    }
 //
@@ -235,7 +240,7 @@ public:
 //    inline int64_t readS64BE(off_t offset) {
 //        int64_t val;
 //        read(&val, offset, sizeof(int64_t));
-//        val = ntohll(val);
+//        val = __ii_swap_endian<int64_t>(val);
 //        return val;
 //    }
 
