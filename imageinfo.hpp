@@ -26,6 +26,8 @@
 // SOFTWARE.
 //
 
+// TODO reduce read call
+
 #pragma once
 #ifndef IMAGEINFO_IMAGEINFO_H
 #define IMAGEINFO_IMAGEINFO_H
@@ -345,14 +347,37 @@ class ImageInfo {
 public:
     ImageInfo() = delete;
 
-    explicit ImageInfo(T1 file) {
+    explicit ImageInfo(T1 file, IIFormat likelyFormat = II_FORMAT_UNKNOWN) {
         T2 fileReader(file);
         IIReadFunc read = [&](void *buf, off_t offset, size_t size) { fileReader.read(buf, offset, size); };
         IIReadInterface ri(read);
-        auto detectors = getDetectors();
         size_t length = fileReader.size();
         bool match;
+
+        auto detectors = getDetectors();
+
+        if (likelyFormat != II_FORMAT_UNKNOWN) {
+            for (auto &detector : detectors) {
+                if (detector.format == likelyFormat) {
+                    detector.process(length, ri, match, m_width, m_height);
+                    if (match) {
+                        m_format = detector.format;
+                        m_ext = detector.ext;
+                        m_fullExt = detector.fullExt;
+                        m_mimetype = detector.mimetype;
+                        m_err = m_width != -1 && m_height != -1
+                                ? II_ERR_OK
+                                : II_ERR_DECODE_SIZE_FAILED;
+                        return;
+                    }
+                    break;
+                }
+            }
+        }
+
         for (auto &detector : detectors) {
+            if (detector.format == likelyFormat) continue;
+
             detector.process(length, ri, match, m_width, m_height);
             if (match) {
                 m_format = detector.format;
@@ -365,6 +390,7 @@ public:
                 return;
             }
         }
+
         m_err = II_ERR_UNRECOGNIZED_FORMAT;
     }
 
