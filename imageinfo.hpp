@@ -211,31 +211,31 @@ public:
         return val;
     }
 
-    inline uint64_t readU64LE(off_t offset) {
-        uint64_t val;
-        read(&val, offset, sizeof(uint64_t));
-        return val;
-    }
-
-    inline uint64_t readU64BE(off_t offset) {
-        uint64_t val;
-        read(&val, offset, sizeof(uint64_t));
-        val = ntohll(val);
-        return val;
-    }
-
-    inline int64_t readS64LE(off_t offset) {
-        int64_t val;
-        read(&val, offset, sizeof(int64_t));
-        return val;
-    }
-
-    inline int64_t readS64BE(off_t offset) {
-        int64_t val;
-        read(&val, offset, sizeof(int64_t));
-        val = ntohll(val);
-        return val;
-    }
+//    inline uint64_t readU64LE(off_t offset) {
+//        uint64_t val;
+//        read(&val, offset, sizeof(uint64_t));
+//        return val;
+//    }
+//
+//    inline uint64_t readU64BE(off_t offset) {
+//        uint64_t val;
+//        read(&val, offset, sizeof(uint64_t));
+//        val = ntohll(val);
+//        return val;
+//    }
+//
+//    inline int64_t readS64LE(off_t offset) {
+//        int64_t val;
+//        read(&val, offset, sizeof(int64_t));
+//        return val;
+//    }
+//
+//    inline int64_t readS64BE(off_t offset) {
+//        int64_t val;
+//        read(&val, offset, sizeof(int64_t));
+//        val = ntohll(val);
+//        return val;
+//    }
 
     inline std::string readString(off_t offset, size_t size) {
         std::string str(size, 0);
