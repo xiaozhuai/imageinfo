@@ -347,7 +347,7 @@ class ImageInfo {
 public:
     ImageInfo() = delete;
 
-    explicit ImageInfo(T1 file, IIFormat likelyFormat = II_FORMAT_UNKNOWN) {
+    explicit ImageInfo(T1 file, IIFormat likelyFormat = II_FORMAT_UNKNOWN, bool mustBe = false) {
         T2 fileReader(file);
         IIReadFunc read = [&](void *buf, off_t offset, size_t size) { fileReader.read(buf, offset, size); };
         IIReadInterface ri(read);
@@ -369,8 +369,14 @@ public:
                                 ? II_ERR_OK
                                 : II_ERR_DECODE_SIZE_FAILED;
                         return;
+                    } else {
+                        if (mustBe) {
+                            m_err = II_ERR_UNRECOGNIZED_FORMAT;
+                            return;
+                        } else {
+                            break;
+                        }
                     }
-                    break;
                 }
             }
         }
