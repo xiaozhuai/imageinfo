@@ -108,9 +108,9 @@ private:
 ```
 
 ```cpp
-// Suppose we have a AAssetManager
+// 假设已经得到了 AAssetManager
 // AAssetManager *manager;
-// Open with AASSET_MODE_RANDOM mode to seek forward and backward
+// 以 AASSET_MODE_RANDOM 模式打开以支持双向seek
 AAsset *file = AAssetManager_open(manager, "test.png", AASSET_MODE_RANDOM);
 ImageInfo<AAsset *, IIAndroidAssetFileReader> imageInfo(file);
 AAsset_close(file);
