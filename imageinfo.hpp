@@ -48,7 +48,7 @@
 
 template<typename T>
 inline T __ii_swap_endian(T u) {
-    static_assert(sizeof(uint8_t) == 1, "CHAR_BIT != 8");
+    static_assert(sizeof(uint8_t) == 1);
     union {
         T u;
         uint8_t u8[sizeof(T)];
