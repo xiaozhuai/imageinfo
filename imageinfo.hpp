@@ -40,6 +40,10 @@
 #include <array>
 #include <cstdio>
 
+#ifdef ANDROID
+#include <android/asset_manager.h>
+#endif
+
 template<typename T>
 inline T __ii_swap_endian(T u) {
     static_assert(sizeof(uint8_t) == 1, "CHAR_BIT != 8");
@@ -71,6 +75,31 @@ enum IIErrorCode {
     II_ERR_UNRECOGNIZED_FORMAT,
     II_ERR_DECODE_SIZE_FAILED,
 };
+
+#ifdef ANDROID
+
+class IIAndroidAssetFileReader {
+public:
+    explicit IIAndroidAssetFileReader(AAsset *file) : m_file(file) {}
+
+    inline size_t size() const {
+        if (m_file != nullptr) {
+            return AAsset_getLength(m_file);
+        } else {
+            return 0;
+        }
+    }
+
+    inline void read(void *buf, off_t offset, size_t size) {
+        AAsset_seek(m_file, offset, SEEK_SET);
+        AAsset_read(m_file, buf, size);
+    }
+
+private:
+    AAsset *m_file = nullptr;
+};
+
+#endif
 
 class IIFileReader {
 public:
