@@ -1,0 +1,62 @@
+name: Build
+
+on:
+    push:
+        branches: [ master ]
+    pull_request:
+        branches: [ master ]
+
+jobs:
+    build-darwin:
+        runs-on: macOS-latest
+        steps:
+            -   name: Checkout
+                uses: actions/checkout@v2
+                with:
+                    submodules: recursive
+            -   name: Build
+                run: |
+                    sudo xcode-select -s /Library/Developer/CommandLineTools
+                    cmake -S . -B build
+                    cmake --build build -- test
+
+    build-linux:
+        runs-on: ubuntu-latest
+        steps:
+            -   name: Checkout
+                uses: actions/checkout@v2
+                with:
+                    submodules: recursive
+            -   name: Build
+                run: |
+                    cmake -S . -B build
+                    cmake --build build -- test
+
+    build-windows-x86:
+        runs-on: windows-latest
+        steps:
+            -   name: Checkout
+                uses: actions/checkout@v2
+                with:
+                    submodules: recursive
+            -   name: Build
+                shell: cmd
+                run: |
+                    call "C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\VC\Auxiliary\Build\vcvars32.bat"
+                    cmake -S . -B build
+                    cmake --build build -- test
+
+    build-windows-x64:
+        runs-on: windows-latest
+        steps:
+            -   name: Checkout
+                uses: actions/checkout@v2
+                with:
+                    submodules: recursive
+            -   name: Build
+                shell: cmd
+                run: |
+                    call "C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\VC\Auxiliary\Build\vcvars64.bat"
+                    cmake -S . -B build
+                    cmake --build build -- test
+
