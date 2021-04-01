@@ -54,6 +54,12 @@ file.close();
 ImageInfo<IIRawData, IIRawDataReader> imageInfo(IIRawData(data, size));
 ```
 
+If you known the file is likely a JPEG, you can provide `likely format` parameter to improve performance;
+
+```cpp
+ImageInfo<const std::string &, IIFilePathReader> imageInfo("images/valid/jpg/sample.jpg", II_FORMAT_JPEG);
+```
+
 ### Custom Reader
 
 First, take a look at `IIFileReader`, all your need to do is define a class and implement `size` and `read` method. (not override)

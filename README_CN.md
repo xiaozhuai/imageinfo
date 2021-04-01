@@ -54,6 +54,12 @@ file.close();
 ImageInfo<IIRawData, IIRawDataReader> imageInfo(IIRawData(data, size));
 ```
 
+如果是事先知道一个文件大概率是JPEG格式, 你可以提供额外的 `likely format` 参数来提升性能;
+
+```cpp
+ImageInfo<const std::string &, IIFilePathReader> imageInfo("images/valid/jpg/sample.jpg", II_FORMAT_JPEG);
+```
+
 ### 自定义Reader
 
 首先，来看一下 `IIFileReader`, 要做的只是定义一个类，然后实现 `size` 和 `read` 方法。(非override)
