@@ -27,7 +27,7 @@ std::cout << "  - Width    : " << imageInfo.getWidth() << "\n";
 std::cout << "  - Height   : " << imageInfo.getHeight() << "\n";
 std::cout << "  - Format   : " << imageInfo.getFormat() << "\n";
 std::cout << "  - Ext      : " << imageInfo.getExt() << "\n";
-std::cout << "  - Long Ext : " << imageInfo.getFullExt() << "\n";
+std::cout << "  - Full Ext : " << imageInfo.getFullExt() << "\n";
 std::cout << "  - Mimetype : " << imageInfo.getMimetype() << "\n\n";
 ```
 
