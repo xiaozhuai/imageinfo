@@ -18,7 +18,8 @@ jobs:
                 run: |
                     sudo xcode-select -s /Library/Developer/CommandLineTools
                     cmake -S . -B build
-                    cmake --build build -- test
+                    cmake --build build -- all
+                    env CTEST_OUTPUT_ON_FAILURE=1 cmake --build build -- test
 
     build-linux:
         runs-on: ubuntu-latest
@@ -30,7 +31,8 @@ jobs:
             -   name: Build
                 run: |
                     cmake -S . -B build
-                    cmake --build build -- test
+                    cmake --build build -- all
+                    env CTEST_OUTPUT_ON_FAILURE=1 cmake --build build -- test
 
     build-windows-x86:
         runs-on: windows-latest
@@ -43,7 +45,8 @@ jobs:
                 shell: cmd
                 run: |
                     call "C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\VC\Auxiliary\Build\vcvars32.bat"
-                    cmake -S . -B build
+                    cmake -G "NMake Makefiles" -S . -B build
+                    cmake --build build -- all
                     cmake --build build -- test
 
     build-windows-x64:
@@ -57,6 +60,6 @@ jobs:
                 shell: cmd
                 run: |
                     call "C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\VC\Auxiliary\Build\vcvars64.bat"
-                    cmake -S . -B build
+                    cmake -G "NMake Makefiles" -S . -B build
+                    cmake --build build -- all
                     cmake --build build -- test
-
