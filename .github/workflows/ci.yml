@@ -1,0 +1,91 @@
+name: ci
+
+on:
+    push:
+        branches: [ master ]
+    pull_request:
+        branches: [ master ]
+
+jobs:
+    code-style:
+        runs-on: ubuntu-22.04
+        steps:
+            -   name: Checkout
+                uses: actions/checkout@v3
+                with:
+                    submodules: recursive
+            -   name: Install clang-format-17
+                run: |
+                    sudo apt-get remove clang-format*
+                    sudo apt-get autoremove
+                    wget -O - https://apt.llvm.org/llvm-snapshot.gpg.key | sudo apt-key add -
+                    echo "deb https://apt.llvm.org/jammy/ llvm-toolchain-jammy-17 main" | sudo tee -a /etc/apt/sources.list
+                    echo "deb-src https://apt.llvm.org/jammy/ llvm-toolchain-jammy-17 main" | sudo tee -a /etc/apt/sources.list
+                    sudo apt-get update
+                    sudo apt-get install clang-format-17
+                    sudo ln -s -f /usr/bin/clang-format-17 /usr/bin/clang-format
+                    clang-format --version
+            -   name: Check code style
+                run: |
+                    cmake -B build .
+                    cmake --build build -- check-format
+
+    linux:
+        needs: code-style
+        runs-on: ubuntu-latest
+        steps:
+            -   name: Checkout
+                uses: actions/checkout@v3
+                with:
+                    submodules: recursive
+            -   name: Build
+                run: |
+                    cmake -B build .
+                    cmake --build build -- all
+                    cmake --build build -- check
+
+    macos:
+        needs: code-style
+        runs-on: macos-latest
+        steps:
+            -   name: Checkout
+                uses: actions/checkout@v3
+                with:
+                    submodules: recursive
+            -   name: Build
+                run: |
+                    cmake -B build .
+                    cmake --build build -- all
+                    cmake --build build -- check
+
+    windows-x64:
+        needs: code-style
+        runs-on: windows-2019
+        steps:
+            -   name: Checkout
+                uses: actions/checkout@v3
+                with:
+                    submodules: recursive
+            -   name: Build
+                shell: cmd
+                run: |
+                    call "C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\VC\Auxiliary\Build\vcvars64.bat"
+                    cmake -GNinja -B build .
+                    cmake --build build -- all
+                    cmake --build build -- check
+
+    windows-x86:
+        needs: code-style
+        runs-on: windows-2019
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v3
+              with:
+                  submodules: recursive
+            - name: Build
+              shell: cmd
+              run: |
+                  call "C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\VC\Auxiliary\Build\vcvars32.bat"
+                  cmake -GNinja -B build .
+                  cmake --build build -- all
+                  cmake --build build -- check
