@@ -16,6 +16,12 @@
 #include <array>
 #include <cstdio>
 
+#ifdef _WIN32
+#include <winsock.h>
+#else
+#include <arpa/inet.h>
+#endif
+
 enum IIFormat {
     II_FORMAT_UNKNOWN = 0,
     II_FORMAT_BMP,
