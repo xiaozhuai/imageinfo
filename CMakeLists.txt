@@ -28,3 +28,12 @@ add_executable(test_files test_files.cpp imageinfo.hpp)
 target_compile_definitions(test_files PRIVATE -DVALID_FILES_PATH="${VALID_FILES_PATH}" -DINVALID_FILES_PATH="${INVALID_FILES_PATH}")
 
 add_test(NAME test_files COMMAND test_files)
+
+if (CMAKE_CONFIGURATION_TYPES)
+    add_custom_target(check COMMAND ${CMAKE_CTEST_COMMAND}
+            --force-new-ctest-process --output-on-failure
+            --build-config "$<CONFIGURATION>")
+else()
+    add_custom_target(check COMMAND ${CMAKE_CTEST_COMMAND}
+            --force-new-ctest-process --output-on-failure)
+endif()
