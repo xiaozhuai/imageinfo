@@ -4,15 +4,19 @@ Single header c++ library to get image size and format without loading/decoding.
 
 ## Supported formats
 
-* bmp
-* gif
-* hdr (pic)
-* jpeg (jpg)
-* png
-* psd
-* tga
-* tiff (tif)
-* webp
+* [x] bmp
+* [ ] dds
+* [x] gif
+* [x] hdr (pic)
+* [ ] icns
+* [ ] ico (cur)
+* [x] jpeg (jpg)
+* [x] png
+* [x] psd
+* [ ] svg
+* [x] tga
+* [x] tiff (tif)
+* [x] webp
 * more coming...
 
 ## Usage

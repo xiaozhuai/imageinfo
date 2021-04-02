@@ -4,15 +4,19 @@ C++单个头文件库，在不加载/解码图片的情况下，获取图片文�
 
 ## 支持格式
 
-* bmp
-* gif
-* hdr (pic)
-* jpeg (jpg)
-* png
-* psd
-* tga
-* tiff (tif)
-* webp
+* [x] bmp
+* [ ] dds
+* [x] gif
+* [x] hdr (pic)
+* [ ] icns
+* [ ] ico (cur)
+* [x] jpeg (jpg)
+* [x] png
+* [x] psd
+* [ ] svg
+* [x] tga
+* [x] tiff (tif)
+* [x] webp
 * 更多...
 
 ## 用法
