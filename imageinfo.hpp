@@ -26,7 +26,6 @@
 // SOFTWARE.
 //
 
-// TODO reduce read call
 
 #pragma once
 #ifndef IMAGEINFO_IMAGEINFO_H
@@ -47,7 +46,7 @@
 #endif
 
 template<typename T>
-inline T __ii_swap_endian(T u) {
+static inline T __ii_swap_endian(T u) {
     static_assert(sizeof(uint8_t) == 1, "sizeof(uint8_t) != 1");
     union {
         T u;
@@ -202,6 +201,144 @@ private:
 
 typedef std::function<void(void *buf, off_t offset, size_t size)> IIReadFunc;
 
+class IIBuffer {
+public:
+    IIBuffer() = default;
+
+    explicit IIBuffer(size_t size) : m_size(size) {
+        m_data = std::shared_ptr<uint8_t>(new uint8_t[size], std::default_delete<uint8_t[]>());
+    }
+
+    inline const uint8_t *data() const {
+        return m_data.get();
+    }
+
+    inline uint8_t *data() {
+        return m_data.get();
+    }
+
+    inline size_t size() const {
+        return m_size;
+    }
+
+public:
+    inline uint8_t readU8(off_t offset) {
+        uint8_t val;
+        readInt(offset, val, false);
+        return val;
+    }
+
+    inline int8_t readS8(off_t offset) {
+        int8_t val;
+        readInt(offset, val, false);
+        return val;
+    }
+
+    inline uint16_t readU16LE(off_t offset) {
+        uint16_t val;
+        readInt(offset, val, false);
+        return val;
+    }
+
+    inline uint16_t readU16BE(off_t offset) {
+        uint16_t val;
+        readInt(offset, val, true);
+        return val;
+    }
+
+    inline int16_t readS16LE(off_t offset) {
+        int16_t val;
+        readInt(offset, val, false);
+        return val;
+    }
+
+    inline int16_t readS16BE(off_t offset) {
+        int16_t val;
+        readInt(offset, val, true);
+        return val;
+    }
+
+    inline uint32_t readU32LE(off_t offset) {
+        uint32_t val;
+        readInt(offset, val, false);
+        return val;
+    }
+
+    inline uint32_t readU32BE(off_t offset) {
+        uint32_t val;
+        readInt(offset, val, true);
+        return val;
+    }
+
+    inline int32_t readS32LE(off_t offset) {
+        int32_t val;
+        readInt(offset, val, false);
+        return val;
+    }
+
+    inline int32_t readS32BE(off_t offset) {
+        int32_t val;
+        readInt(offset, val, true);
+        return val;
+    }
+
+    inline uint64_t readU64LE(off_t offset) {
+        uint64_t val;
+        readInt(offset, val, false);
+        return val;
+    }
+
+    inline uint64_t readU64BE(off_t offset) {
+        uint64_t val;
+        readInt(offset, val, true);
+        return val;
+    }
+
+    inline int64_t readS64LE(off_t offset) {
+        int64_t val;
+        readInt(offset, val, false);
+        return val;
+    }
+
+    inline int64_t readS64BE(off_t offset) {
+        int64_t val;
+        readInt(offset, val, true);
+        return val;
+    }
+
+    inline std::string readString(off_t offset, size_t size) {
+        return std::string((char *) data() + offset, size);
+    }
+
+    inline std::string toString() {
+        return std::string((char *) data(), size());
+    }
+
+    inline bool cmp(off_t offset, size_t size, const void *mem) {
+        return memcmp(data() + offset, mem, size) == 0;
+    }
+
+    inline bool cmpOneOf(off_t offset, size_t size, const std::initializer_list<const void *> &mems) {
+        for (auto *mem : mems) {
+            if (memcmp(data() + offset, mem, size) == 0) return true;
+        }
+        return false;
+    }
+
+private:
+    template<typename T>
+    inline void readInt(off_t offset, T &val, bool swapEndian = false) {
+        val = *((T *) (data() + offset));
+        if (swapEndian) {
+            val = __ii_swap_endian<T>(val);
+        }
+    }
+
+private:
+    std::shared_ptr<uint8_t> m_data = nullptr;
+    size_t m_size = 0;
+};
+
 class IIReadInterface {
 public:
     IIReadInterface() = delete;
@@ -211,92 +348,92 @@ public:
 public:
     inline uint8_t readU8(off_t offset) {
         uint8_t val;
-        read(&val, offset, sizeof(uint8_t));
+        readInt(offset, val, false);
         return val;
     }
 
     inline int8_t readS8(off_t offset) {
         int8_t val;
-        read(&val, offset, sizeof(int8_t));
+        readInt(offset, val, false);
         return val;
     }
 
     inline uint16_t readU16LE(off_t offset) {
         uint16_t val;
-        read(&val, offset, sizeof(uint16_t));
+        readInt(offset, val, false);
         return val;
     }
 
     inline uint16_t readU16BE(off_t offset) {
         uint16_t val;
-        read(&val, offset, sizeof(uint16_t));
-        val = __ii_swap_endian<uint16_t>(val);
+        readInt(offset, val, true);
         return val;
     }
 
     inline int16_t readS16LE(off_t offset) {
         int16_t val;
-        read(&val, offset, sizeof(int16_t));
+        readInt(offset, val, false);
         return val;
     }
 
     inline int16_t readS16BE(off_t offset) {
         int16_t val;
-        read(&val, offset, sizeof(int16_t));
-        val = __ii_swap_endian<int16_t>(val);
+        readInt(offset, val, true);
         return val;
     }
 
     inline uint32_t readU32LE(off_t offset) {
         uint32_t val;
-        read(&val, offset, sizeof(uint32_t));
+        readInt(offset, val, false);
         return val;
     }
 
     inline uint32_t readU32BE(off_t offset) {
         uint32_t val;
-        read(&val, offset, sizeof(uint32_t));
-        val = __ii_swap_endian<uint32_t>(val);
+        readInt(offset, val, true);
         return val;
     }
 
     inline int32_t readS32LE(off_t offset) {
         int32_t val;
-        read(&val, offset, sizeof(int32_t));
+        readInt(offset, val, false);
         return val;
     }
 
     inline int32_t readS32BE(off_t offset) {
         int32_t val;
-        read(&val, offset, sizeof(int32_t));
-        val = __ii_swap_endian<int32_t>(val);
+        readInt(offset, val, true);
         return val;
     }
 
     inline uint64_t readU64LE(off_t offset) {
         uint64_t val;
-        read(&val, offset, sizeof(uint64_t));
+        readInt(offset, val, false);
         return val;
     }
 
     inline uint64_t readU64BE(off_t offset) {
         uint64_t val;
-        read(&val, offset, sizeof(uint64_t));
-        val = __ii_swap_endian<uint64_t>(val);
+        readInt(offset, val, true);
         return val;
     }
 
     inline int64_t readS64LE(off_t offset) {
         int64_t val;
-        read(&val, offset, sizeof(int64_t));
+        readInt(offset, val, false);
         return val;
     }
 
     inline int64_t readS64BE(off_t offset) {
         int64_t val;
-        read(&val, offset, sizeof(int64_t));
-        val = __ii_swap_endian<int64_t>(val);
+        readInt(offset, val, true);
         return val;
+    }
+
+    inline IIBuffer readBuffer(off_t offset, size_t size) {
+        IIBuffer buffer(size);
+        read(buffer.data(), offset, size);
+        return buffer;
     }
 
     inline std::string readString(off_t offset, size_t size) {
@@ -318,6 +455,15 @@ public:
             if (memcmp(m1.data(), mem, size) == 0) return true;
         }
         return false;
+    }
+
+private:
+    template<typename T>
+    inline void readInt(off_t offset, T &val, bool swapEndian) {
+        read(&val, offset, sizeof(T));
+        if (swapEndian) {
+            val = __ii_swap_endian<T>(val);
+        }
     }
 
 private:
@@ -351,14 +497,19 @@ static std::vector<IIDetector> s_ii_detectors = {
                 "bmp",
                 "image/bmp",
                 [](size_t length, IIReadInterface &ri, bool &match, int64_t &width, int64_t &height) {
-                    match = length >= 26
-                            && ri.cmp(0, 2, "BM");
-                    if (!match) return;
-
-                    width = abs(ri.readS32LE(18));
-
+                    if (length < 26) {
+                        match = false;
+                        return;
+                    }
+                    auto buffer = ri.readBuffer(0, 26);
+                    if (!buffer.cmp(0, 2, "BM")) {
+                        match = false;
+                        return;
+                    }
+                    match = true;
+                    width = abs(buffer.readS32LE(18));
                     // bmp height can be negative, it means flip Y
-                    height = abs(ri.readS32LE(22));
+                    height = abs(buffer.readS32LE(22));
                 }
         ),
 
@@ -370,12 +521,18 @@ static std::vector<IIDetector> s_ii_detectors = {
                 "gif",
                 "image/gif",
                 [](size_t length, IIReadInterface &ri, bool &match, int64_t &width, int64_t &height) {
-                    match = length >= 10
-                            && ri.cmpOneOf(0, 6, {"GIF87a", "GIF89a"});
-                    if (!match) return;
-
-                    width = ri.readU16LE(6);
-                    height = ri.readU16LE(8);
+                    if (length < 10) {
+                        match = false;
+                        return;
+                    }
+                    auto buffer = ri.readBuffer(0, 10);
+                    if (!buffer.cmpOneOf(0, 6, {"GIF87a", "GIF89a"})) {
+                        match = false;
+                        return;
+                    }
+                    match = true;
+                    width = buffer.readU16LE(6);
+                    height = buffer.readU16LE(8);
                 }
         ),
 
@@ -387,12 +544,21 @@ static std::vector<IIDetector> s_ii_detectors = {
                 "hdr",
                 "image/vnd.radiance",
                 [](size_t length, IIReadInterface &ri, bool &match, int64_t &width, int64_t &height) {
-                    match = length >= 6
-                            && ri.cmpOneOf(0, 6, {"#?RGBE", "#?XYZE"});
-                    if (!match) return;
+                    if (length < 6) {
+                        match = false;
+                        return;
+                    }
 
                     // TODO Max header size ?
-                    auto header = ri.readString(0, length < 256 ? length : 256);
+                    auto buffer = ri.readBuffer(0, std::min<size_t>(length, 256));
+                    if (!buffer.cmpOneOf(0, 6, {"#?RGBE", "#?XYZE"})) {
+                        match = false;
+                        return;
+                    }
+
+                    match = true;
+
+                    auto header = buffer.toString();
                     std::smatch results;
 
                     std::regex_search(header, results, std::regex(R"(\s(\-|\+)X\s)"));
@@ -424,23 +590,31 @@ static std::vector<IIDetector> s_ii_detectors = {
                 "jpeg",
                 "image/jpeg",
                 [](size_t length, IIReadInterface &ri, bool &match, int64_t &width, int64_t &height) {
-                    match = length >= 2
-                            && ri.cmp(0, 2, "\xFF\xD8");
-                    if (!match) return;
+                    if (length < 2) {
+                        match = false;
+                        return;
+                    }
+                    if (!ri.cmp(0, 2, "\xFF\xD8")) {
+                        match = false;
+                        return;
+                    }
+                    match = true;
 
                     size_t offset = 2;
-                    for (; offset + 10 <= length;) {
+                    for (; offset + 4 <= length;) {
+                        auto section = ri.readBuffer(offset, offset + 9 <= length ? 9 : 4);
+                        uint16_t sectionSize = section.readU16BE(2);
+
                         // 0xFFC0 is baseline standard (SOF0)
                         // 0xFFC1 is baseline optimized (SOF1)
                         // 0xFFC2 is progressive (SOF2)
-                        if (ri.cmpOneOf(offset, 2, {"\xFF\xC0", "\xFF\xC1", "\xFF\xC2"})) {
-                            height = ri.readU16BE(offset + 5);
-                            width = ri.readU16BE(offset + 7);
+                        if (section.cmpOneOf(0, 2, {"\xFF\xC0", "\xFF\xC1", "\xFF\xC2"})
+                            && offset + 9 <= length) {
+                            height = section.readU16BE(5);
+                            width = section.readU16BE(7);
                             break;
                         }
-                        offset += 2;
-                        uint16_t sectionSize = ri.readU16BE(offset);
-                        offset += sectionSize;
+                        offset += sectionSize + 2;
                     }
                 }
         ),
@@ -453,18 +627,27 @@ static std::vector<IIDetector> s_ii_detectors = {
                 "png",
                 "image/png",
                 [](size_t length, IIReadInterface &ri, bool &match, int64_t &width, int64_t &height) {
-                    match = length >= 4
-                            && ri.cmp(0, 4, "\x89PNG");
-                    if (!match) return;
+                    if (length < 4) {
+                        match = false;
+                        return;
+                    }
 
-                    std::string firstChunkType = ri.readString(12, 4);
-                    if (firstChunkType == "IHDR" && length >= 24) {
-                        width = ri.readU32BE(16);
-                        height = ri.readU32BE(20);
+                    auto buffer = ri.readBuffer(0, std::min<size_t>(length, 40));
+                    if (!buffer.cmp(0, 4, "\x89PNG")) {
+                        match = false;
+                        return;
+                    }
+
+                    match = true;
+
+                    std::string firstChunkType = buffer.readString(12, 4);
+                    if (firstChunkType == "IHDR" && buffer.size() >= 24) {
+                        width = buffer.readU32BE(16);
+                        height = buffer.readU32BE(20);
                     } else if (firstChunkType == "CgBI") {
-                        if (ri.readString(28, 4) == "IHDR" && length >= 40) {
-                            width = ri.readU32BE(32);
-                            height = ri.readU32BE(36);
+                        if (buffer.readString(28, 4) == "IHDR" && buffer.size() >= 40) {
+                            width = buffer.readU32BE(32);
+                            height = buffer.readU32BE(36);
                         }
                     }
                 }
@@ -477,12 +660,20 @@ static std::vector<IIDetector> s_ii_detectors = {
                 "psd",
                 "image/psd",
                 [](size_t length, IIReadInterface &ri, bool &match, int64_t &width, int64_t &height) {
-                    match = length >= 22
-                            && ri.cmp(0, 6, "8BPS\x00\x01");
-                    if (!match) return;
+                    if (length < 22) {
+                        match = false;
+                        return;
+                    }
+                    auto buffer = ri.readBuffer(0, 22);
+                    if (!buffer.cmp(0, 6, "8BPS\x00\x01")) {
+                        match = false;
+                        return;
+                    }
 
-                    height = ri.readU32BE(14);
-                    width = ri.readU32BE(18);
+                    match = true;
+
+                    height = buffer.readU32BE(14);
+                    width = buffer.readU32BE(18);
                 }
         ),
 
@@ -494,38 +685,47 @@ static std::vector<IIDetector> s_ii_detectors = {
                 "tiff",
                 "image/tiff",
                 [](size_t length, IIReadInterface &ri, bool &match, int64_t &width, int64_t &height) {
-                    match = length >= 4
-                            && ri.cmpOneOf(0, 4, {"\x49\x49\x2A\x00", "\x4D\x4D\x00\x2A"});
-                    if (!match) return;
+                    if (length < 8) {
+                        match = false;
+                        return;
+                    }
+                    auto header = ri.readBuffer(0, 8);
+                    if (!header.cmpOneOf(0, 4, {"\x49\x49\x2A\x00", "\x4D\x4D\x00\x2A"})) {
+                        match = false;
+                        return;
+                    }
+                    match = true;
+                    bool needSwap = header.readU8(0) == 0x4D;
 
-                    int needSwap = ri.readU8(0) == 0x4D;
-
-                    uint32_t offset = needSwap ? ri.readU32BE(4) : ri.readU32LE(4);
+                    uint32_t offset = needSwap ? header.readU32BE(4) : header.readU32LE(4);
                     if (length < offset + 2) return;
 
                     uint16_t numEntry = needSwap ? ri.readU16BE(offset) : ri.readU16LE(offset);
 
                     offset += 2;
+
                     for (uint16_t i = 0;
                          i < numEntry
                          && length >= offset + 12
                          && (width == -1 || height == -1);
                          ++i, offset += 12) {
 
-                        uint16_t tag = needSwap ? ri.readU16BE(offset) : ri.readU16LE(offset);
-                        uint16_t type = needSwap ? ri.readU16BE(offset + 2) : ri.readU16LE(offset + 2);
+                        auto buffer = ri.readBuffer(offset, 12);
+
+                        uint16_t tag = needSwap ? buffer.readU16BE(0) : buffer.readU16LE(0);
+                        uint16_t type = needSwap ? buffer.readU16BE(2) : buffer.readU16LE(2);
 
                         if (tag == 256) {           // Found ImageWidth entry
                             if (type == 3) {
-                                width = needSwap ? ri.readU16BE(offset + 8) : ri.readU16LE(offset + 8);
+                                width = needSwap ? buffer.readU16BE(8) : buffer.readU16LE(8);
                             } else if (type == 4) {
-                                width = needSwap ? ri.readU32BE(offset + 8) : ri.readU32LE(offset + 8);
+                                width = needSwap ? buffer.readU32BE(8) : buffer.readU32LE(8);
                             }
                         } else if (tag == 257) {    // Found ImageHeight entry
                             if (type == 3) {
-                                height = needSwap ? ri.readU16BE(offset + 8) : ri.readU16LE(offset + 8);
+                                height = needSwap ? buffer.readU16BE(8) : buffer.readU16LE(8);
                             } else if (type == 4) {
-                                height = needSwap ? ri.readU32BE(offset + 8) : ri.readU32LE(offset + 8);
+                                height = needSwap ? buffer.readU32BE(8) : buffer.readU32LE(8);
                             }
                         }
                     }
@@ -540,27 +740,33 @@ static std::vector<IIDetector> s_ii_detectors = {
                 "webp",
                 "image/webp",
                 [](size_t length, IIReadInterface &ri, bool &match, int64_t &width, int64_t &height) {
-                    match = length >= 16
-                            && ri.cmp(0, 4, "RIFF")
-                            && ri.cmp(8, 4, "WEBP");
-                    if (!match) return;
+                    if (length < 16) {
+                        match = false;
+                        return;
+                    }
+                    auto buffer = ri.readBuffer(0, std::min<size_t>(length, 30));
+                    if (!buffer.cmp(0, 4, "RIFF") || !buffer.cmp(8, 4, "WEBP")) {
+                        match = false;
+                        return;
+                    }
 
+                    match = true;
 
-                    std::string type = ri.readString(12, 4);
-                    if (type == "VP8 " && length >= 30) {
-                        width = ri.readU16LE(26) & 0x3FFF;
-                        height = ri.readU16LE(28) & 0x3FFF;
-                    } else if (type == "VP8L" && length >= 25) {
-                        uint32_t n = ri.readU32LE(21);
+                    std::string type = buffer.readString(12, 4);
+                    if (type == "VP8 " && buffer.size() >= 30) {
+                        width = buffer.readU16LE(26) & 0x3FFF;
+                        height = buffer.readU16LE(28) & 0x3FFF;
+                    } else if (type == "VP8L" && buffer.size() >= 25) {
+                        uint32_t n = buffer.readU32LE(21);
                         width = (n & 0x3FFF) + 1;
                         height = ((n >> 14) & 0x3FFF) + 1;
-                    } else if (type == "VP8X" && length >= 30) {
-                        uint8_t extendedHeader = ri.readU8(20);
+                    } else if (type == "VP8X" && buffer.size() >= 30) {
+                        uint8_t extendedHeader = buffer.readU8(20);
                         bool validStart = (extendedHeader & 0xc0) == 0;
                         bool validEnd = (extendedHeader & 0x01) == 0;
                         if (validStart && validEnd) {
-                            width = (ri.readU32LE(24) & 0x00FFFFFF) + 1;
-                            height = ((ri.readU32LE(26) & 0xFFFFFF00) >> 8) + 1;
+                            width = (buffer.readU32LE(24) & 0x00FFFFFF) + 1;
+                            height = ((buffer.readU32LE(26) & 0xFFFFFF00) >> 8) + 1;
                         } else {
                             // Invalid
                         }
@@ -583,30 +789,32 @@ static std::vector<IIDetector> s_ii_detectors = {
                         return;
                     }
 
+                    auto buffer = ri.readBuffer(0, 18);
+
                     if (ri.cmp(length - 18, 18, "TRUEVISION-XFILE.\x00")) {
                         match = true;
-                        width = ri.readU16LE(12);
-                        height = ri.readU16LE(14);
+                        width = buffer.readU16LE(12);
+                        height = buffer.readU16LE(14);
                         return;
                     }
 
-                    uint8_t idLen = ri.readU8(0);
+                    uint8_t idLen = buffer.readU8(0);
                     if (length < (size_t) idLen + 18) {
                         match = false;
                         return;
                     }
 
-                    uint8_t colorMapType = ri.readU8(1);
-                    uint8_t imageType = ri.readU8(2);
-                    uint16_t firstColorMapEntryIndex = ri.readU16LE(3);
-                    uint16_t colorMapLength = ri.readU16LE(5);
-                    uint8_t colorMapEntrySize = ri.readU8(7);
-                    uint16_t xOrigin = ri.readU16LE(8);
-                    uint16_t yOrigin = ri.readU16LE(10);
-                    uint16_t w = ri.readU16LE(12);
-                    uint16_t h = ri.readU16LE(14);
-                    uint8_t pixelDepth = ri.readU8(16);
-                    uint8_t flags = ri.readU8(17);
+                    uint8_t colorMapType = buffer.readU8(1);
+                    uint8_t imageType = buffer.readU8(2);
+                    uint16_t firstColorMapEntryIndex = buffer.readU16LE(3);
+                    uint16_t colorMapLength = buffer.readU16LE(5);
+                    uint8_t colorMapEntrySize = buffer.readU8(7);
+                    uint16_t xOrigin = buffer.readU16LE(8);
+                    uint16_t yOrigin = buffer.readU16LE(10);
+                    uint16_t w = buffer.readU16LE(12);
+                    uint16_t h = buffer.readU16LE(14);
+                    uint8_t pixelDepth = buffer.readU8(16);
+                    uint8_t flags = buffer.readU8(17);
 
                     if (colorMapType == 0) {            // no color map
                         if (imageType == 0
