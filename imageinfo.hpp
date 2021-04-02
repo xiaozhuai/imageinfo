@@ -221,6 +221,14 @@ public:
         return m_size;
     }
 
+    inline uint8_t &operator[](int offset) {
+        return m_data.get()[offset];
+    }
+
+    inline uint8_t operator[](int offset) const {
+        return m_data.get()[offset];
+    }
+
 public:
     inline uint8_t readU8(off_t offset) {
         uint8_t val;
@@ -695,7 +703,7 @@ static std::vector<IIDetector> s_ii_detectors = {
                         return;
                     }
                     match = true;
-                    bool needSwap = header.readU8(0) == 0x4D;
+                    bool needSwap = header[0] == 0x4D;
 
                     uint32_t offset = needSwap ? header.readU32BE(4) : header.readU32LE(4);
                     if (length < offset + 2) return;
