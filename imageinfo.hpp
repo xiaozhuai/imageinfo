@@ -62,6 +62,7 @@ static inline T __ii_swap_endian(T u) {
 enum IIFormat {
     II_FORMAT_UNKNOWN = 0,
     II_FORMAT_BMP,
+    II_FORMAT_DDS,
     II_FORMAT_GIF,
     II_FORMAT_HDR,
     II_FORMAT_ICNS,
@@ -520,6 +521,28 @@ static std::vector<IIDetector> s_ii_detectors = {
                     width = abs(buffer.readS32LE(18));
                     // bmp height can be negative, it means flip Y
                     height = abs(buffer.readS32LE(22));
+                }
+        ),
+
+        ///////////////////////// DDS /////////////////////////
+        IIDetector(
+                II_FORMAT_DDS,
+                "dds",
+                "dds",
+                "image/dds",
+                [](size_t length, IIReadInterface &ri, bool &match, int64_t &width, int64_t &height) {
+                    if (length < 20) {
+                        match = false;
+                        return;
+                    }
+                    auto buffer = ri.readBuffer(0, 20);
+                    if (!buffer.cmp(0, 4, "DDS ")) {
+                        match = false;
+                        return;
+                    }
+                    match = true;
+                    height = buffer.readU32LE(12);
+                    width = buffer.readU32LE(16);
                 }
         ),
 
