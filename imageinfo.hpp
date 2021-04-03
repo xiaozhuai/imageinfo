@@ -37,6 +37,7 @@
 #include <string>
 #include <regex>
 #include <utility>
+#include <unordered_map>
 #include <vector>
 #include <array>
 #include <cstdio>
@@ -63,6 +64,7 @@ enum IIFormat {
     II_FORMAT_BMP,
     II_FORMAT_GIF,
     II_FORMAT_HDR,
+    II_FORMAT_ICNS,
     II_FORMAT_JPEG,
     II_FORMAT_PNG,
     II_FORMAT_PSD,
@@ -590,6 +592,86 @@ static std::vector<IIDetector> s_ii_detectors = {
                 }
         ),
 
+        ///////////////////////// ICNS /////////////////////////
+        IIDetector(
+                II_FORMAT_ICNS,
+                "icns",
+                "icns",
+                "image/icns",
+                [](size_t length, IIReadInterface &ri, bool &match, int64_t &width, int64_t &height) {
+                    if (length < 8) {
+                        match = false;
+                        return;
+                    }
+                    auto buffer = ri.readBuffer(0, 8);
+                    uint32_t fileLength = buffer.readU32BE(4);
+                    if (!buffer.cmp(0, 4, "icns") || fileLength != length) {
+                        match = false;
+                        return;
+                    }
+                    match = true;
+
+                    std::unordered_map<std::string, int64_t> TYPE_SIZE_MAP = {
+                            {"ICON", 32},
+                            {"ICN#", 32},
+                            // m => 16 x 16
+                            {"icm#", 16},
+                            {"icm4", 16},
+                            {"icm8", 16},
+                            // s => 16 x 16
+                            {"ics#", 16},
+                            {"ics4", 16},
+                            {"ics8", 16},
+                            {"is32", 16},
+                            {"s8mk", 16},
+                            {"icp4", 16},
+                            // l => 32 x 32
+                            {"icl4", 32},
+                            {"icl8", 32},
+                            {"il32", 32},
+                            {"l8mk", 32},
+                            {"icp5", 32},
+                            {"ic11", 32},
+                            // h => 48 x 48
+                            {"ich4", 48},
+                            {"ich8", 48},
+                            {"ih32", 48},
+                            {"h8mk", 48},
+                            // . => 64 x 64
+                            {"icp6", 64},
+                            {"ic12", 32},
+                            // t => 128 x 128
+                            {"it32", 128},
+                            {"t8mk", 128},
+                            {"ic07", 128},
+                            // . => 256 x 256
+                            {"ic08", 256},
+                            {"ic13", 256},
+                            // . => 512 x 512
+                            {"ic09", 512},
+                            {"ic14", 512},
+                            // . => 1024 x 1024
+                            {"ic10", 1024},
+                    };
+
+                    off_t offset = 8;
+                    // while (offset + 8 < length) {
+                    auto entry = ri.readBuffer(offset, 8);
+                    auto type = entry.readString(0, 4);
+                    // uint32_t entrySize = entry.readU32BE(4);
+
+                    if (TYPE_SIZE_MAP.find(type) != TYPE_SIZE_MAP.end()) {
+                        width = TYPE_SIZE_MAP[type];
+                        height = width;
+                    }
+
+                    // TODO support multi image entry
+
+                    // offset += entrySize;
+                    // }
+                }
+        ),
+
         ///////////////////////// JPEG /////////////////////////
         // https://www.fileformat.info/format/jpeg/corion.htm
         IIDetector(
@@ -856,13 +938,13 @@ static std::vector<IIDetector> s_ii_detectors = {
         ),
 };
 
-template<typename T1, typename T2>
+template<typename InputType, typename ReaderType>
 class ImageInfo {
 public:
     ImageInfo() = delete;
 
-    explicit ImageInfo(T1 file, IIFormat likelyFormat = II_FORMAT_UNKNOWN, bool mustBe = false) {
-        T2 fileReader(file);
+    explicit ImageInfo(InputType file, IIFormat likelyFormat = II_FORMAT_UNKNOWN, bool mustBe = false) {
+        ReaderType fileReader(file);
         IIReadFunc read = [&](void *buf, off_t offset, size_t size) { fileReader.read(buf, offset, size); };
         IIReadInterface ri(read);
         size_t length = fileReader.size();

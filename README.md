@@ -8,7 +8,7 @@ Single header c++ library to get image size and format without loading/decoding.
 * [ ] dds
 * [x] gif
 * [x] hdr (pic)
-* [ ] icns
+* [x] icns
 * [ ] ico (cur)
 * [x] jpeg (jpg)
 * [x] png
