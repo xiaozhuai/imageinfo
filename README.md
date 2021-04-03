@@ -1,6 +1,6 @@
 # imageinfo
 
-Single header c++ library to get image size and format without loading/decoding. Super fast!
+Cross platform super fast single header c++ library to get image size and format without loading/decoding.
 
 ## Supported formats
 
