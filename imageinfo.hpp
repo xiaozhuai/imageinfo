@@ -67,6 +67,7 @@ enum IIFormat {
     II_FORMAT_HDR,
     II_FORMAT_ICNS,
     II_FORMAT_JPEG,
+    II_FORMAT_KTX,
     II_FORMAT_PNG,
     II_FORMAT_PSD,
     II_FORMAT_TGA,
@@ -729,6 +730,28 @@ static std::vector<IIDetector> s_ii_detectors = {
                         }
                         offset += sectionSize + 2;
                     }
+                }
+        ),
+
+        ///////////////////////// KTX /////////////////////////
+        IIDetector(
+                II_FORMAT_KTX,
+                "ktx",
+                "ktx",
+                "image/ktx",
+                [](size_t length, IIReadInterface &ri, bool &match, int64_t &width, int64_t &height) {
+                    if (length < 44) {
+                        match = false;
+                        return;
+                    }
+                    auto buffer = ri.readBuffer(0, 44);
+                    if (!buffer.cmp(1, 6, "KTX 11")) {
+                        match = false;
+                        return;
+                    }
+                    match = true;
+                    width = buffer.readU32LE(36);
+                    height = buffer.readU32LE(40);
                 }
         ),
 

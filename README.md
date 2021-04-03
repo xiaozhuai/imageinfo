@@ -11,6 +11,7 @@ Single header c++ library to get image size and format without loading/decoding.
 * [x] icns
 * [ ] ico (cur)
 * [x] jpeg (jpg)
+* [x] ktx
 * [x] png
 * [x] psd
 * [ ] svg

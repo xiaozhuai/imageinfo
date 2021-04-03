@@ -11,6 +11,7 @@ C++单个头文件库，在不加载/解码图片的情况下，获取图片文�
 * [x] icns
 * [ ] ico (cur)
 * [x] jpeg (jpg)
+* [x] ktx
 * [x] png
 * [x] psd
 * [ ] svg
