@@ -39,6 +39,7 @@
 #include <utility>
 #include <unordered_map>
 #include <vector>
+#include <tuple>
 #include <array>
 #include <cstdio>
 
@@ -66,6 +67,7 @@ enum IIFormat {
     II_FORMAT_GIF,
     II_FORMAT_HDR,
     II_FORMAT_ICNS,
+    II_FORMAT_ICO,
     II_FORMAT_JPEG,
     II_FORMAT_KTX,
     II_FORMAT_PNG,
@@ -696,6 +698,65 @@ static std::vector<IIDetector> s_ii_detectors = {
                 }
         ),
 
+        ///////////////////////// ICO /////////////////////////
+        // TODO Not rigorous enough, keep it as second to last detector
+        IIDetector(
+                II_FORMAT_ICO,
+                "ico",
+                "ico",
+                "image/ico",
+                [](size_t length, IIReadInterface &ri, bool &match, int64_t &width, int64_t &height) {
+                    if (length < 6) {
+                        match = false;
+                        return;
+                    }
+                    auto buffer = ri.readBuffer(0, 6);
+                    if (!buffer.cmp(0, 4, "\x00\x00\x01\x00")) {
+                        match = false;
+                        return;
+                    }
+                    uint16_t entryCount = buffer.readU16LE(4);
+                    if (entryCount == 0) {
+                        match = false;
+                        return;
+                    }
+                    const size_t ENTRY_SIZE = 16;
+                    size_t entryTotalSize = entryCount * ENTRY_SIZE;
+
+                    off_t offset = 6;
+                    if (length < offset + entryTotalSize) {
+                        match = false;
+                        return;
+                    }
+                    buffer = ri.readBuffer(offset, entryTotalSize);
+                    offset += entryTotalSize;
+
+                    std::vector<std::pair<int64_t, int64_t>> sizes;
+
+                    for (int i = 0; i < entryCount; ++i) {
+                        uint8_t w1 = buffer.readU8(i * ENTRY_SIZE);
+                        uint8_t h1 = buffer.readU8(i * ENTRY_SIZE + 1);
+                        int64_t w2 = w1 == 0 ? 256 : w1;
+                        int64_t h2 = h1 == 0 ? 256 : h1;
+                        sizes.emplace_back(std::make_pair(w2, h2));
+
+                        uint32_t bytes = buffer.readS32LE(i * ENTRY_SIZE + 8);
+                        offset += bytes;
+                    }
+
+                    if (length < (size_t) offset) {
+                        match = false;
+                        return;
+                    }
+
+                    match = true;
+
+                    // TODO support multi image entry
+                    width = sizes.front().first;
+                    height = sizes.front().second;
+                }
+        ),
+
         ///////////////////////// JPEG /////////////////////////
         // https://www.fileformat.info/format/jpeg/corion.htm
         IIDetector(
@@ -911,6 +972,7 @@ static std::vector<IIDetector> s_ii_detectors = {
         ),
 
         ///////////////////////// TGA /////////////////////////
+        // TODO Not rigorous enough, keep it as last detector
         // https://www.fileformat.info/format/tga/corion.htm
         IIDetector(
                 II_FORMAT_TGA,
@@ -918,8 +980,6 @@ static std::vector<IIDetector> s_ii_detectors = {
                 "tga",
                 "image/tga",
                 [](size_t length, IIReadInterface &ri, bool &match, int64_t &width, int64_t &height) {
-
-                    // TODO Not rigorous enough, keep it as last detector
                     if (length < 18) {
                         match = false;
                         return;

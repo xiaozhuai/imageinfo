@@ -9,7 +9,7 @@ C++单个头文件库，在不加载/解码图片的情况下，获取图片文�
 * [x] gif
 * [x] hdr (pic)
 * [x] icns
-* [ ] ico (cur)
+* [x] ico (cur)
 * [x] jpeg (jpg)
 * [x] ktx
 * [x] png
