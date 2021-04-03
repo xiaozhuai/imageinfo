@@ -5,11 +5,12 @@ C++单个头文件库，在不加载/解码图片的情况下，获取图片文�
 ## 支持格式
 
 * [x] bmp
+* [x] cur
 * [x] dds
 * [x] gif
 * [x] hdr (pic)
 * [x] icns
-* [x] ico (cur)
+* [x] ico
 * [x] jpeg (jpg)
 * [x] ktx
 * [x] png

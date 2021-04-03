@@ -5,11 +5,12 @@ Single header c++ library to get image size and format without loading/decoding.
 ## Supported formats
 
 * [x] bmp
+* [x] cur
 * [x] dds
 * [x] gif
 * [x] hdr (pic)
 * [x] icns
-* [x] ico (cur)
+* [x] ico
 * [x] jpeg (jpg)
 * [x] ktx
 * [x] png
