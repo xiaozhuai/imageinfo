@@ -38,6 +38,7 @@
 #include <regex>
 #include <utility>
 #include <unordered_map>
+#include <set>
 #include <vector>
 #include <tuple>
 #include <array>
@@ -485,8 +486,9 @@ private:
     IIReadFunc &read;
 };
 
-typedef std::function<void(size_t length, IIReadInterface &ri, bool &match, int64_t &width,
-                           int64_t &height)> IIProcessFunc;
+typedef std::function<void(size_t length, IIReadInterface &ri,
+                           bool &match, int64_t &width, int64_t &height,
+                           std::vector<std::array<int64_t, 2>> &entrySizes)> IIProcessFunc;
 
 struct IIDetector {
     IIDetector(IIFormat f, const char *e, const char *fe, const char *mt, IIProcessFunc p)
@@ -511,7 +513,9 @@ static std::vector<IIDetector> s_ii_detectors = {
                 "bmp",
                 "bmp",
                 "image/bmp",
-                [](size_t length, IIReadInterface &ri, bool &match, int64_t &width, int64_t &height) {
+                [](size_t length, IIReadInterface &ri,
+                   bool &match, int64_t &width, int64_t &height,
+                   std::vector<std::array<int64_t, 2>> &entrySizes) {
                     if (length < 26) {
                         match = false;
                         return;
@@ -534,7 +538,9 @@ static std::vector<IIDetector> s_ii_detectors = {
                 "cur",
                 "cur",
                 "image/cur",
-                [](size_t length, IIReadInterface &ri, bool &match, int64_t &width, int64_t &height) {
+                [](size_t length, IIReadInterface &ri,
+                   bool &match, int64_t &width, int64_t &height,
+                   std::vector<std::array<int64_t, 2>> &entrySizes) {
                     if (length < 6) {
                         match = false;
                         return;
@@ -561,14 +567,14 @@ static std::vector<IIDetector> s_ii_detectors = {
                     buffer = ri.readBuffer(offset, entryTotalSize);
                     offset += entryTotalSize;
 
-                    std::vector<std::pair<int64_t, int64_t>> sizes;
+                    std::vector<std::array<int64_t, 2>> sizes;
 
                     for (int i = 0; i < entryCount; ++i) {
                         uint8_t w1 = buffer.readU8(i * ENTRY_SIZE);
                         uint8_t h1 = buffer.readU8(i * ENTRY_SIZE + 1);
                         int64_t w2 = w1 == 0 ? 256 : w1;
                         int64_t h2 = h1 == 0 ? 256 : h1;
-                        sizes.emplace_back(std::make_pair(w2, h2));
+                        sizes.push_back({w2, h2});
 
                         uint32_t bytes = buffer.readS32LE(i * ENTRY_SIZE + 8);
                         offset += bytes;
@@ -581,9 +587,10 @@ static std::vector<IIDetector> s_ii_detectors = {
 
                     match = true;
 
-                    // TODO support multi image entry
-                    width = sizes.front().first;
-                    height = sizes.front().second;
+                    width = sizes.front()[0];
+                    height = sizes.front()[1];
+
+                    sizes.swap(entrySizes);
                 }
         ),
 
@@ -593,7 +600,9 @@ static std::vector<IIDetector> s_ii_detectors = {
                 "dds",
                 "dds",
                 "image/dds",
-                [](size_t length, IIReadInterface &ri, bool &match, int64_t &width, int64_t &height) {
+                [](size_t length, IIReadInterface &ri,
+                   bool &match, int64_t &width, int64_t &height,
+                   std::vector<std::array<int64_t, 2>> &entrySizes) {
                     if (length < 20) {
                         match = false;
                         return;
@@ -616,7 +625,9 @@ static std::vector<IIDetector> s_ii_detectors = {
                 "gif",
                 "gif",
                 "image/gif",
-                [](size_t length, IIReadInterface &ri, bool &match, int64_t &width, int64_t &height) {
+                [](size_t length, IIReadInterface &ri,
+                   bool &match, int64_t &width, int64_t &height,
+                   std::vector<std::array<int64_t, 2>> &entrySizes) {
                     if (length < 10) {
                         match = false;
                         return;
@@ -639,7 +650,9 @@ static std::vector<IIDetector> s_ii_detectors = {
                 "hdr",
                 "hdr",
                 "image/vnd.radiance",
-                [](size_t length, IIReadInterface &ri, bool &match, int64_t &width, int64_t &height) {
+                [](size_t length, IIReadInterface &ri,
+                   bool &match, int64_t &width, int64_t &height,
+                   std::vector<std::array<int64_t, 2>> &entrySizes) {
                     if (length < 6) {
                         match = false;
                         return;
@@ -684,7 +697,9 @@ static std::vector<IIDetector> s_ii_detectors = {
                 "icns",
                 "icns",
                 "image/icns",
-                [](size_t length, IIReadInterface &ri, bool &match, int64_t &width, int64_t &height) {
+                [](size_t length, IIReadInterface &ri,
+                   bool &match, int64_t &width, int64_t &height,
+                   std::vector<std::array<int64_t, 2>> &entrySizes) {
                     if (length < 8) {
                         match = false;
                         return;
@@ -740,21 +755,23 @@ static std::vector<IIDetector> s_ii_detectors = {
                             {"ic10", 1024},
                     };
 
-                    off_t offset = 8;
-                    // while (offset + 8 < length) {
-                    auto entry = ri.readBuffer(offset, 8);
-                    auto type = entry.readString(0, 4);
-                    // uint32_t entrySize = entry.readU32BE(4);
+                    std::set<int64_t> sizeSet;
 
-                    if (TYPE_SIZE_MAP.find(type) != TYPE_SIZE_MAP.end()) {
-                        width = TYPE_SIZE_MAP[type];
-                        height = width;
+                    off_t offset = 8;
+                    while (offset + 8 < length) {
+                        auto entry = ri.readBuffer(offset, 8);
+                        auto type = entry.readString(0, 4);
+                        uint32_t entrySize = entry.readU32BE(4);
+                        if (TYPE_SIZE_MAP.find(type) != TYPE_SIZE_MAP.end()) {
+                            int64_t s = TYPE_SIZE_MAP[type];
+                            sizeSet.insert(s);
+                            entrySizes.push_back({s, s});
+                        }
+                        offset += entrySize;
                     }
 
-                    // TODO support multi image entry
-
-                    // offset += entrySize;
-                    // }
+                    width = *sizeSet.rbegin();
+                    height = width;
                 }
         ),
 
@@ -764,7 +781,9 @@ static std::vector<IIDetector> s_ii_detectors = {
                 "ico",
                 "ico",
                 "image/ico",
-                [](size_t length, IIReadInterface &ri, bool &match, int64_t &width, int64_t &height) {
+                [](size_t length, IIReadInterface &ri,
+                   bool &match, int64_t &width, int64_t &height,
+                   std::vector<std::array<int64_t, 2>> &entrySizes) {
                     if (length < 6) {
                         match = false;
                         return;
@@ -791,14 +810,14 @@ static std::vector<IIDetector> s_ii_detectors = {
                     buffer = ri.readBuffer(offset, entryTotalSize);
                     offset += entryTotalSize;
 
-                    std::vector<std::pair<int64_t, int64_t>> sizes;
+                    std::vector<std::array<int64_t, 2>> sizes;
 
                     for (int i = 0; i < entryCount; ++i) {
                         uint8_t w1 = buffer.readU8(i * ENTRY_SIZE);
                         uint8_t h1 = buffer.readU8(i * ENTRY_SIZE + 1);
                         int64_t w2 = w1 == 0 ? 256 : w1;
                         int64_t h2 = h1 == 0 ? 256 : h1;
-                        sizes.emplace_back(std::make_pair(w2, h2));
+                        sizes.push_back({w2, h2});
 
                         uint32_t bytes = buffer.readS32LE(i * ENTRY_SIZE + 8);
                         offset += bytes;
@@ -811,9 +830,10 @@ static std::vector<IIDetector> s_ii_detectors = {
 
                     match = true;
 
-                    // TODO support multi image entry
-                    width = sizes.front().first;
-                    height = sizes.front().second;
+                    width = sizes.front()[0];
+                    height = sizes.front()[1];
+
+                    sizes.swap(entrySizes);
                 }
         ),
 
@@ -824,7 +844,9 @@ static std::vector<IIDetector> s_ii_detectors = {
                 "jpg",
                 "jpeg",
                 "image/jpeg",
-                [](size_t length, IIReadInterface &ri, bool &match, int64_t &width, int64_t &height) {
+                [](size_t length, IIReadInterface &ri,
+                   bool &match, int64_t &width, int64_t &height,
+                   std::vector<std::array<int64_t, 2>> &entrySizes) {
                     if (length < 2) {
                         match = false;
                         return;
@@ -860,7 +882,9 @@ static std::vector<IIDetector> s_ii_detectors = {
                 "ktx",
                 "ktx",
                 "image/ktx",
-                [](size_t length, IIReadInterface &ri, bool &match, int64_t &width, int64_t &height) {
+                [](size_t length, IIReadInterface &ri,
+                   bool &match, int64_t &width, int64_t &height,
+                   std::vector<std::array<int64_t, 2>> &entrySizes) {
                     if (length < 44) {
                         match = false;
                         return;
@@ -883,7 +907,9 @@ static std::vector<IIDetector> s_ii_detectors = {
                 "png",
                 "png",
                 "image/png",
-                [](size_t length, IIReadInterface &ri, bool &match, int64_t &width, int64_t &height) {
+                [](size_t length, IIReadInterface &ri,
+                   bool &match, int64_t &width, int64_t &height,
+                   std::vector<std::array<int64_t, 2>> &entrySizes) {
                     if (length < 4) {
                         match = false;
                         return;
@@ -916,7 +942,9 @@ static std::vector<IIDetector> s_ii_detectors = {
                 "psd",
                 "psd",
                 "image/psd",
-                [](size_t length, IIReadInterface &ri, bool &match, int64_t &width, int64_t &height) {
+                [](size_t length, IIReadInterface &ri,
+                   bool &match, int64_t &width, int64_t &height,
+                   std::vector<std::array<int64_t, 2>> &entrySizes) {
                     if (length < 22) {
                         match = false;
                         return;
@@ -941,7 +969,9 @@ static std::vector<IIDetector> s_ii_detectors = {
                 "tif",
                 "tiff",
                 "image/tiff",
-                [](size_t length, IIReadInterface &ri, bool &match, int64_t &width, int64_t &height) {
+                [](size_t length, IIReadInterface &ri,
+                   bool &match, int64_t &width, int64_t &height,
+                   std::vector<std::array<int64_t, 2>> &entrySizes) {
                     if (length < 8) {
                         match = false;
                         return;
@@ -996,7 +1026,9 @@ static std::vector<IIDetector> s_ii_detectors = {
                 "webp",
                 "webp",
                 "image/webp",
-                [](size_t length, IIReadInterface &ri, bool &match, int64_t &width, int64_t &height) {
+                [](size_t length, IIReadInterface &ri,
+                   bool &match, int64_t &width, int64_t &height,
+                   std::vector<std::array<int64_t, 2>> &entrySizes) {
                     if (length < 16) {
                         match = false;
                         return;
@@ -1039,7 +1071,9 @@ static std::vector<IIDetector> s_ii_detectors = {
                 "tga",
                 "tga",
                 "image/tga",
-                [](size_t length, IIReadInterface &ri, bool &match, int64_t &width, int64_t &height) {
+                [](size_t length, IIReadInterface &ri,
+                   bool &match, int64_t &width, int64_t &height,
+                   std::vector<std::array<int64_t, 2>> &entrySizes) {
                     if (length < 18) {
                         match = false;
                         return;
@@ -1138,7 +1172,7 @@ public:
 
     bool tryDetector(IIDetector &detector, size_t length, IIReadInterface &ri) {
         bool match = false;
-        detector.process(length, ri, match, m_width, m_height);
+        detector.process(length, ri, match, m_width, m_height, m_entrySizes);
         if (match) {
             m_format = detector.format;
             m_ext = detector.ext;
@@ -1187,6 +1221,10 @@ public:
         return {m_width, m_height};
     }
 
+    inline const std::vector<std::array<int64_t, 2>> &getEntrySizes() const {
+        return m_entrySizes;
+    }
+
     inline IIErrorCode getErrorCode() const {
         return m_err;
     }
@@ -1212,6 +1250,7 @@ private:
     int64_t m_width = -1;
     int64_t m_height = -1;
     IIErrorCode m_err = II_ERR_OK;
+    std::vector<std::array<int64_t, 2>> m_entrySizes;
 };
 
 
