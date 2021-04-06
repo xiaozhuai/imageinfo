@@ -3,57 +3,105 @@
 //
 
 #include <iostream>
-#include <sstream>
-#include <fstream>
-#include <cassert>
+#include <cstdio>
 #include "imageinfo.hpp"
 
-int get_image_info(const std::string &file) {
-    ImageInfo<const std::string &, IIFilePathReader> imageInfo(file);
-    std::cout << "File: " << file << "\n";
-    std::cout << "  - Error    : " << imageInfo.getErrorMsg() << "\n";
-    std::cout << "  - Width    : " << imageInfo.getWidth() << "\n";
-    std::cout << "  - Height   : " << imageInfo.getHeight() << "\n";
-    std::cout << "  - Format   : " << imageInfo.getFormat() << "\n";
-    std::cout << "  - Ext      : " << imageInfo.getExt() << "\n";
-    std::cout << "  - Full Ext : " << imageInfo.getFullExt() << "\n";
-    std::cout << "  - Mimetype : " << imageInfo.getMimetype() << "\n\n";
-    return imageInfo.getErrorCode();
-}
-
-std::vector<std::string> parse_files(const std::string &file) {
-    std::fstream in(file, std::ios::in);
-    assert(in.is_open());
-
-    std::stringstream ss;
-    ss << in.rdbuf();
-    in.close();
-
-    std::vector<std::string> lines;
-    std::string line;
-    while (!ss.eof()) {
-        std::getline(ss, line);
-        if (line.empty()) continue;
-        lines.emplace_back(line);
-    }
-
-    assert(!lines.empty());
-    return lines;
-}
+#define ASSET_II(file, error, format, width, height) do {                                                       \
+    ImageInfo<const std::string &, IIFilePathReader> imageInfo(file);                                           \
+    if (imageInfo.getErrorCode() != (error)) {                                                                  \
+        fprintf(stderr, "Error ASSET_II, file: %s, line: %d, error != %s\n", file, __LINE__, #error);           \
+        exit(1);                                                                                                \
+    }                                                                                                           \
+    if (imageInfo.getFormat() != (format)) {                                                                    \
+        fprintf(stderr, "Error ASSET_II, file: %s, line: %d, format != %s\n", file, __LINE__, #format);         \
+        exit(1);                                                                                                \
+    }                                                                                                           \
+    if (imageInfo.getWidth() != (width)) {                                                                      \
+        fprintf(stderr, "Error ASSET_II, file: %s, line: %d, width != %ld\n", file, __LINE__, (width));         \
+        exit(1);                                                                                                \
+    }                                                                                                           \
+    if (imageInfo.getHeight() != (height)) {                                                                    \
+        fprintf(stderr, "Error ASSET_II, file: %s, line: %d, height != %ld\n", file, __LINE__, (height));       \
+        exit(1);                                                                                                \
+    }                                                                                                           \
+} while(0)
 
 int main() {
     {
-        auto images = parse_files(VALID_FILES_PATH);
-        for (auto &image : images) {
-            assert(get_image_info(image) == II_ERR_OK);
-        }
+        ASSET_II(IMAGES_DIRECTORY "valid/bmp/sample.bmp", II_ERR_OK, II_FORMAT_BMP, 123l, 456l);
     }
 
     {
-        auto images = parse_files(INVALID_FILES_PATH);
-        for (auto &image : images) {
-            assert(get_image_info(image) != II_ERR_OK);
-        }
+        ASSET_II(IMAGES_DIRECTORY "valid/cur/sample.cur", II_ERR_OK, II_FORMAT_CUR, 32l, 32l);
+    }
+
+    {
+        ASSET_II(IMAGES_DIRECTORY "valid/dds/sample.dds", II_ERR_OK, II_FORMAT_DDS, 123l, 456l);
+    }
+
+    {
+        ASSET_II(IMAGES_DIRECTORY "valid/gif/sample.gif", II_ERR_OK, II_FORMAT_GIF, 123l, 456l);
+    }
+
+    {
+        ASSET_II(IMAGES_DIRECTORY "valid/hdr/sample.hdr", II_ERR_OK, II_FORMAT_HDR, 123l, 456l);
+    }
+
+    {
+        ASSET_II(IMAGES_DIRECTORY "valid/icns/sample.icns", II_ERR_OK, II_FORMAT_ICNS, 128l, 128l);
+    }
+
+    {
+        ASSET_II(IMAGES_DIRECTORY "valid/ico/multi-size.ico", II_ERR_OK, II_FORMAT_ICO, 256l, 256l);
+        ASSET_II(IMAGES_DIRECTORY "valid/ico/multi-size-compressed.ico", II_ERR_OK, II_FORMAT_ICO, 256l, 256l);
+        ASSET_II(IMAGES_DIRECTORY "valid/ico/sample.ico", II_ERR_OK, II_FORMAT_ICO, 32l, 32l);
+        ASSET_II(IMAGES_DIRECTORY "valid/ico/sample-256.ico", II_ERR_OK, II_FORMAT_ICO, 256l, 256l);
+        ASSET_II(IMAGES_DIRECTORY "valid/ico/sample-256-compressed.ico", II_ERR_OK, II_FORMAT_ICO, 256l, 256l);
+        ASSET_II(IMAGES_DIRECTORY "valid/ico/sample-compressed.ico", II_ERR_OK, II_FORMAT_ICO, 32l, 32l);
+    }
+
+    {
+        ASSET_II(IMAGES_DIRECTORY "valid/jpg/1x2-flipped-big-endian.jpg", II_ERR_OK, II_FORMAT_JPEG, 1l, 2l);
+        ASSET_II(IMAGES_DIRECTORY "valid/jpg/1x2-flipped-little-endian.jpg", II_ERR_OK, II_FORMAT_JPEG, 1l, 2l);
+        ASSET_II(IMAGES_DIRECTORY "valid/jpg/large.jpg", II_ERR_OK, II_FORMAT_JPEG, 1600l, 1200l);
+        ASSET_II(IMAGES_DIRECTORY "valid/jpg/optimized.jpg", II_ERR_OK, II_FORMAT_JPEG, 123l, 456l);
+        ASSET_II(IMAGES_DIRECTORY "valid/jpg/progressive.jpg", II_ERR_OK, II_FORMAT_JPEG, 123l, 456l);
+        ASSET_II(IMAGES_DIRECTORY "valid/jpg/sample.jpg", II_ERR_OK, II_FORMAT_JPEG, 123l, 456l);
+        ASSET_II(IMAGES_DIRECTORY "valid/jpg/sampleExported.jpg", II_ERR_OK, II_FORMAT_JPEG, 123l, 456l);
+        ASSET_II(IMAGES_DIRECTORY "valid/jpg/very-large.jpg", II_ERR_OK, II_FORMAT_JPEG, 4800l, 3600l);
+    }
+
+    {
+        ASSET_II(IMAGES_DIRECTORY "valid/ktx/sample.ktx", II_ERR_OK, II_FORMAT_KTX, 123l, 456l);
+    }
+
+    {
+        ASSET_II(IMAGES_DIRECTORY "valid/png/sample.png", II_ERR_OK, II_FORMAT_PNG, 123l, 456l);
+        ASSET_II(IMAGES_DIRECTORY "valid/png/sample_fried.png", II_ERR_OK, II_FORMAT_PNG, 128l, 68l);
+    }
+
+    {
+        ASSET_II(IMAGES_DIRECTORY "valid/psd/sample.psd", II_ERR_OK, II_FORMAT_PSD, 123l, 456l);
+    }
+
+    {
+        ASSET_II(IMAGES_DIRECTORY "valid/tga/sample.tga", II_ERR_OK, II_FORMAT_TGA, 123l, 456l);
+    }
+
+    {
+        ASSET_II(IMAGES_DIRECTORY "valid/tiff/big-endian.tiff", II_ERR_OK, II_FORMAT_TIFF, 123l, 456l);
+        ASSET_II(IMAGES_DIRECTORY "valid/tiff/jpeg.tiff", II_ERR_OK, II_FORMAT_TIFF, 123l, 456l);
+        ASSET_II(IMAGES_DIRECTORY "valid/tiff/little-endian.tiff", II_ERR_OK, II_FORMAT_TIFF, 123l, 456l);
+    }
+
+    {
+        ASSET_II(IMAGES_DIRECTORY "valid/webp/lossless.webp", II_ERR_OK, II_FORMAT_WEBP, 123l, 456l);
+        ASSET_II(IMAGES_DIRECTORY "valid/webp/extended.webp", II_ERR_OK, II_FORMAT_WEBP, 123l, 456l);
+        ASSET_II(IMAGES_DIRECTORY "valid/webp/lossy.webp", II_ERR_OK, II_FORMAT_WEBP, 123l, 456l);
+    }
+
+    {
+        ASSET_II(IMAGES_DIRECTORY "invalid/sample.png", II_ERR_DECODE_SIZE_FAILED, II_FORMAT_PNG, -1l, -1l);
     }
 
     return 0;
