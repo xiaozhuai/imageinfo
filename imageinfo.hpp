@@ -659,7 +659,7 @@ static std::vector<IIDetector> s_ii_detectors = {
                     }
 
                     // TODO Max header size ?
-                    auto buffer = ri.readBuffer(0, std::min<size_t>(length, 256));
+                    auto buffer = ri.readBuffer(0, std::min(length, (size_t) 256));
                     if (!buffer.cmpOneOf(0, 6, {"#?RGBE", "#?XYZE"})) {
                         match = false;
                         return;
@@ -755,7 +755,7 @@ static std::vector<IIDetector> s_ii_detectors = {
                             {"ic10", 1024},
                     };
 
-                    std::set<int64_t> sizeSet;
+                    int64_t maxSize = 0;
 
                     off_t offset = 8;
                     while (offset + 8 < length) {
@@ -764,14 +764,14 @@ static std::vector<IIDetector> s_ii_detectors = {
                         uint32_t entrySize = entry.readU32BE(4);
                         if (TYPE_SIZE_MAP.find(type) != TYPE_SIZE_MAP.end()) {
                             int64_t s = TYPE_SIZE_MAP[type];
-                            sizeSet.insert(s);
                             entrySizes.push_back({s, s});
+                            maxSize = std::max(maxSize, s);
                         }
                         offset += entrySize;
                     }
 
-                    width = *sizeSet.rbegin();
-                    height = width;
+                    width = maxSize;
+                    height = maxSize;
                 }
         ),
 
@@ -915,7 +915,7 @@ static std::vector<IIDetector> s_ii_detectors = {
                         return;
                     }
 
-                    auto buffer = ri.readBuffer(0, std::min<size_t>(length, 40));
+                    auto buffer = ri.readBuffer(0, std::min(length, (size_t) 40));
                     if (!buffer.cmp(0, 4, "\x89PNG")) {
                         match = false;
                         return;
@@ -1033,7 +1033,7 @@ static std::vector<IIDetector> s_ii_detectors = {
                         match = false;
                         return;
                     }
-                    auto buffer = ri.readBuffer(0, std::min<size_t>(length, 30));
+                    auto buffer = ri.readBuffer(0, std::min(length, (size_t) 30));
                     if (!buffer.cmp(0, 4, "RIFF") || !buffer.cmp(8, 4, "WEBP")) {
                         match = false;
                         return;
@@ -1222,6 +1222,9 @@ public:
     }
 
     inline const std::vector<std::array<int64_t, 2>> &getEntrySizes() const {
+        if (m_entrySizes.empty()) {
+            return {getSize()};
+        }
         return m_entrySizes;
     }
 
