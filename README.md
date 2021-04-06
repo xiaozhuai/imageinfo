@@ -23,7 +23,7 @@ As few I/O times as possible! Read as few bytes as possible!
 * [x] tga
 * [x] tiff (tif)
 * [x] webp
-* more coming...
+* [ ] more coming...
 
 ## Usage
 
