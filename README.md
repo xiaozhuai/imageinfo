@@ -4,6 +4,8 @@ Cross platform super fast single header c++ library to get image size and format
 
 The imageinfo don't get image format by file ext name, but infer by file header bytes and character.
 
+As few I/O times as possible! Read as few bytes as possible!
+
 ## Supported formats
 
 * [x] bmp
