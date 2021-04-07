@@ -507,7 +507,7 @@ struct IIDetector {
     IIProcessFunc process;
 };
 
-static std::vector<IIDetector> s_ii_detectors = {
+static const std::vector<IIDetector> s_ii_detectors = {
         ///////////////////////// BMP /////////////////////////
         // https://www.fileformat.info/format/bmp/corion.htm
         IIDetector(
@@ -714,47 +714,43 @@ static std::vector<IIDetector> s_ii_detectors = {
                     }
                     match = true;
 
-                    std::unordered_map<std::string, int64_t> TYPE_SIZE_MAP = {
+                    const std::unordered_map<std::string, int64_t> TYPE_SIZE_MAP = {
                             {"ICON", 32},
                             {"ICN#", 32},
-                            // m => 16 x 16
                             {"icm#", 16},
                             {"icm4", 16},
                             {"icm8", 16},
-                            // s => 16 x 16
                             {"ics#", 16},
                             {"ics4", 16},
                             {"ics8", 16},
                             {"is32", 16},
                             {"s8mk", 16},
-                            {"icp4", 16},
-                            // l => 32 x 32
                             {"icl4", 32},
                             {"icl8", 32},
                             {"il32", 32},
                             {"l8mk", 32},
-                            {"icp5", 32},
-                            {"ic11", 32},
-                            // h => 48 x 48
+                            {"ich#", 48},
                             {"ich4", 48},
                             {"ich8", 48},
                             {"ih32", 48},
                             {"h8mk", 48},
-                            // . => 64 x 64
-                            {"icp6", 64},
-                            {"ic12", 32},
-                            // t => 128 x 128
                             {"it32", 128},
                             {"t8mk", 128},
+                            {"icp4", 16},
+                            {"icp5", 32},
+                            {"icp6", 64},
                             {"ic07", 128},
-                            // . => 256 x 256
                             {"ic08", 256},
-                            {"ic13", 256},
-                            // . => 512 x 512
                             {"ic09", 512},
-                            {"ic14", 512},
-                            // . => 1024 x 1024
                             {"ic10", 1024},
+                            {"ic11", 32},
+                            {"ic12", 64},
+                            {"ic13", 256},
+                            {"ic14", 512},
+                            {"ic04", 16},
+                            {"ic05", 32},
+                            {"icsB", 36},
+                            {"icsb", 18},
                     };
 
                     int64_t maxSize = 0;
@@ -764,11 +760,9 @@ static std::vector<IIDetector> s_ii_detectors = {
                         buffer = ri.readBuffer(offset, 8);
                         auto type = buffer.readString(0, 4);
                         uint32_t entrySize = buffer.readU32BE(4);
-                        if (TYPE_SIZE_MAP.find(type) != TYPE_SIZE_MAP.end()) {
-                            int64_t s = TYPE_SIZE_MAP[type];
-                            entrySizes.push_back({s, s});
-                            maxSize = std::max(maxSize, s);
-                        }
+                        int64_t s = TYPE_SIZE_MAP.at(type);
+                        entrySizes.push_back({s, s});
+                        maxSize = std::max(maxSize, s);
                         offset += entrySize;
                     }
 
@@ -1262,7 +1256,7 @@ public:
         size_t length = fileReader.size();
 
         if (likelyFormat != II_FORMAT_UNKNOWN) {
-            for (auto &detector : s_ii_detectors) {
+            for (const auto &detector : s_ii_detectors) {
                 if (detector.format == likelyFormat) {
                     if (tryDetector(detector, length, ri)) return;
                     break;
@@ -1274,7 +1268,7 @@ public:
             }
         }
 
-        for (auto &detector : s_ii_detectors) {
+        for (const auto &detector : s_ii_detectors) {
             if (detector.format == likelyFormat) continue;
             if (tryDetector(detector, length, ri)) return;
         }
@@ -1282,7 +1276,7 @@ public:
         m_err = II_ERR_UNRECOGNIZED_FORMAT;
     }
 
-    bool tryDetector(IIDetector &detector, size_t length, IIReadInterface &ri) {
+    bool tryDetector(const IIDetector &detector, size_t length, IIReadInterface &ri) {
         bool match = false;
         detector.process(length, ri, match, m_width, m_height, m_entrySizes);
         if (match) {
