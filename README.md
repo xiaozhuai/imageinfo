@@ -27,6 +27,25 @@ As few I/O times as possible! Read as few bytes as possible!
 * [x] webp
 * [ ] more coming...
 
+## Build & Test
+
+### Linux & MacOS
+
+```shell
+cmake -S . -B build
+cmake --build build -- all
+cmake --build build -- check
+```
+
+### Windows
+
+```cmd
+call "C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\VC\Auxiliary\Build\vcvars32.bat"
+cmake -G "NMake Makefiles" -S . -B build
+cmake --build build -- all
+cmake --build build -- check
+```
+
 ## Usage
 
 ### Simplest Demo

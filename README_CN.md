@@ -27,6 +27,25 @@ imageinfo 并不是通过扩展名来识别图片格式，而是通过文件头�
 * [x] webp
 * [ ] 更多...
 
+## 构建 & 测试
+
+### Linux & MacOS
+
+```shell
+cmake -S . -B build
+cmake --build build -- all
+cmake --build build -- check
+```
+
+### Windows
+
+```cmd
+call "C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\VC\Auxiliary\Build\vcvars32.bat"
+cmake -G "NMake Makefiles" -S . -B build
+cmake --build build -- all
+cmake --build build -- check
+```
+
 ## 用法
 
 ### 最简DEMO代码
