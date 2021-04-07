@@ -760,10 +760,10 @@ static std::vector<IIDetector> s_ii_detectors = {
                     int64_t maxSize = 0;
 
                     off_t offset = 8;
-                    while (offset + 8 < length) {
-                        auto entry = ri.readBuffer(offset, 8);
-                        auto type = entry.readString(0, 4);
-                        uint32_t entrySize = entry.readU32BE(4);
+                    while (offset + 8 <= length) {
+                        buffer = ri.readBuffer(offset, 8);
+                        auto type = buffer.readString(0, 4);
+                        uint32_t entrySize = buffer.readU32BE(4);
                         if (TYPE_SIZE_MAP.find(type) != TYPE_SIZE_MAP.end()) {
                             int64_t s = TYPE_SIZE_MAP[type];
                             entrySizes.push_back({s, s});
@@ -879,7 +879,7 @@ static std::vector<IIDetector> s_ii_detectors = {
                     uint32_t ftypLength = buffer.readU32BE(0);
                     offset += ftypLength;
 
-                    for (; offset + 24 <= length;) {
+                    while (offset + 24 <= length) {
                         buffer = ri.readBuffer(offset, 24);
                         if (buffer.cmp(4, 4, "jp2h")) {
                             if (buffer.cmp(12, 4, "ihdr")) {
@@ -915,7 +915,7 @@ static std::vector<IIDetector> s_ii_detectors = {
                     match = true;
 
                     size_t offset = 2;
-                    for (; offset + 4 <= length;) {
+                    while (offset + 4 <= length) {
                         auto section = ri.readBuffer(offset, offset + 9 <= length ? 9 : 4);
                         uint16_t sectionSize = section.readU16BE(2);
 
@@ -973,7 +973,7 @@ static std::vector<IIDetector> s_ii_detectors = {
                     uint32_t ftypLength = buffer.readU32BE(0);
                     offset += ftypLength;
 
-                    for (; offset + 24 <= length;) {
+                    while (offset + 24 <= length) {
                         buffer = ri.readBuffer(offset, 24);
                         if (buffer.cmp(4, 4, "jp2h")) {
                             if (buffer.cmp(12, 4, "ihdr")) {
