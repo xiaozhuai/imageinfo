@@ -72,6 +72,7 @@ enum IIFormat {
     II_FORMAT_ICO,
     II_FORMAT_JP2,
     II_FORMAT_JPEG,
+    II_FORMAT_JPX,
     II_FORMAT_KTX,
     II_FORMAT_PNG,
     II_FORMAT_PSD,
@@ -868,6 +869,7 @@ static std::vector<IIDetector> s_ii_detectors = {
                     }
 
                     buffer = ri.readBuffer(offset, 12);
+                    // type == "jp2 "
                     if (!buffer.cmp(4, 8, "ftypjp2 ")) {
                         match = false;
                         return;
@@ -927,6 +929,61 @@ static std::vector<IIDetector> s_ii_detectors = {
                             break;
                         }
                         offset += sectionSize + 2;
+                    }
+                }
+        ),
+
+        ///////////////////////// JPX /////////////////////////
+        // https://docs.fileformat.com/image/jpx/
+        IIDetector(
+                II_FORMAT_JPX,
+                "jpx",
+                "jpx",
+                "image/jpx",
+                [](size_t length, IIReadInterface &ri,
+                   bool &match, int64_t &width, int64_t &height,
+                   std::vector<std::array<int64_t, 2>> &entrySizes) {
+                    if (length < 8) {
+                        match = false;
+                        return;
+                    }
+                    auto buffer = ri.readBuffer(0, 8);
+
+                    if (!buffer.cmp(4, 4, "jP  ")) {
+                        match = false;
+                        return;
+                    }
+
+                    uint32_t signatureLength = buffer.readU32BE(0);
+                    off_t offset = signatureLength;
+
+                    if (length < offset + 12) {
+                        match = false;
+                        return;
+                    }
+
+                    buffer = ri.readBuffer(offset, 12);
+                    // same as jp2, type == "jpx "
+                    if (!buffer.cmp(4, 8, "ftypjpx ")) {
+                        match = false;
+                        return;
+                    }
+                    match = true;
+
+                    uint32_t ftypLength = buffer.readU32BE(0);
+                    offset += ftypLength;
+
+                    for (; offset + 24 <= length;) {
+                        buffer = ri.readBuffer(offset, 24);
+                        if (buffer.cmp(4, 4, "jp2h")) {
+                            if (buffer.cmp(12, 4, "ihdr")) {
+                                height = buffer.readU32BE(16);
+                                width = buffer.readU32BE(20);
+                            }
+                            break;
+                        }
+                        uint32_t boxLength = buffer.readU32BE(0);
+                        offset += boxLength;
                     }
                 }
         ),

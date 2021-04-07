@@ -17,6 +17,7 @@ As few I/O times as possible! Read as few bytes as possible!
 * [x] ico
 * [x] jp2
 * [x] jpeg (jpg)
+* [x] jpx
 * [x] ktx
 * [x] png
 * [x] psd
