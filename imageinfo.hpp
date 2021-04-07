@@ -70,6 +70,7 @@ enum IIFormat {
     II_FORMAT_HDR,
     II_FORMAT_ICNS,
     II_FORMAT_ICO,
+    II_FORMAT_JP2,
     II_FORMAT_JPEG,
     II_FORMAT_KTX,
     II_FORMAT_PNG,
@@ -834,6 +835,60 @@ static std::vector<IIDetector> s_ii_detectors = {
                     height = sizes.front()[1];
 
                     sizes.swap(entrySizes);
+                }
+        ),
+
+        ///////////////////////// JP2 /////////////////////////
+        // https://docs.fileformat.com/image/jp2/
+        IIDetector(
+                II_FORMAT_JP2,
+                "jp2",
+                "jp2",
+                "image/jp2",
+                [](size_t length, IIReadInterface &ri,
+                   bool &match, int64_t &width, int64_t &height,
+                   std::vector<std::array<int64_t, 2>> &entrySizes) {
+                    if (length < 8) {
+                        match = false;
+                        return;
+                    }
+                    auto buffer = ri.readBuffer(0, 8);
+
+                    if (!buffer.cmp(4, 4, "jP  ")) {
+                        match = false;
+                        return;
+                    }
+
+                    uint32_t signatureLength = buffer.readU32BE(0);
+                    off_t offset = signatureLength;
+
+                    if (length < offset + 12) {
+                        match = false;
+                        return;
+                    }
+
+                    buffer = ri.readBuffer(offset, 12);
+                    if (!buffer.cmp(4, 8, "ftypjp2 ")) {
+                        match = false;
+                        return;
+                    }
+                    match = true;
+
+                    uint32_t ftypLength = buffer.readU32BE(0);
+                    offset += ftypLength;
+
+                    for (; offset + 24 <= length;) {
+                        buffer = ri.readBuffer(offset, 24);
+                        if (buffer.cmp(4, 4, "jp2h")) {
+                            if (buffer.cmp(12, 4, "ihdr")) {
+                                height = buffer.readU32BE(16);
+                                width = buffer.readU32BE(20);
+                            }
+                            break;
+                        }
+                        uint32_t boxLength = buffer.readU32BE(0);
+                        offset += boxLength;
+                    }
                 }
         ),
 

@@ -15,6 +15,7 @@ As few I/O times as possible! Read as few bytes as possible!
 * [x] hdr (pic)
 * [x] icns
 * [x] ico
+* [x] jp2
 * [x] jpeg (jpg)
 * [x] ktx
 * [x] png

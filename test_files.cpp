@@ -60,6 +60,11 @@ int main() {
     }
 
     {
+        ASSET_II(IMAGES_DIRECTORY "valid/jp2/sample.jp2", II_ERR_OK, II_FORMAT_JP2, 123l, 456l);
+        ASSET_II(IMAGES_DIRECTORY "valid/jp2/jpx_disguised_as_jp2.jp2", II_ERR_OK, II_FORMAT_JP2, 2717l, 3701l);
+    }
+
+    {
         ASSET_II(IMAGES_DIRECTORY "valid/jpg/1x2-flipped-big-endian.jpg", II_ERR_OK, II_FORMAT_JPEG, 1l, 2l);
         ASSET_II(IMAGES_DIRECTORY "valid/jpg/1x2-flipped-little-endian.jpg", II_ERR_OK, II_FORMAT_JPEG, 1l, 2l);
         ASSET_II(IMAGES_DIRECTORY "valid/jpg/large.jpg", II_ERR_OK, II_FORMAT_JPEG, 1600l, 1200l);
