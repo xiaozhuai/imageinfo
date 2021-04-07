@@ -2,7 +2,6 @@
 // Created by xiaozhuai on 2021/4/1.
 //
 
-#include <iostream>
 #include <cstdio>
 #include "imageinfo.hpp"
 

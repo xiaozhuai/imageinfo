@@ -1,8 +1,15 @@
 #include <iostream>
 #include "imageinfo.hpp"
 
-int get_image_info(const std::string &file) {
-    ImageInfo<const std::string &, IIFilePathReader> imageInfo(file);
+int main(int argc, char **argv) {
+    if (argc < 2) {
+        printf("Usage: %s <file>\n", argv[0]);
+        return 1;
+    }
+
+    const char *file = argv[1];
+    ImageInfo<const char *, IIFilePathReader> imageInfo(file);
+
     std::cout << "File: " << file << "\n";
     std::cout << "  - Error    : " << imageInfo.getErrorMsg() << "\n";
     std::cout << "  - Width    : " << imageInfo.getWidth() << "\n";
@@ -11,13 +18,6 @@ int get_image_info(const std::string &file) {
     std::cout << "  - Ext      : " << imageInfo.getExt() << "\n";
     std::cout << "  - Full Ext : " << imageInfo.getFullExt() << "\n";
     std::cout << "  - Mimetype : " << imageInfo.getMimetype() << "\n\n";
-    return imageInfo.getErrorCode();
-}
 
-int main(int argc, char **argv) {
-    if (argc < 2) {
-        std::cout << "Usage: " << argv[0] << " <file>\n";
-        return 1;
-    }
-    return get_image_info(argv[1]);
+    return imageInfo.getErrorCode();
 }
