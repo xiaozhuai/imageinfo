@@ -32,7 +32,7 @@ As few I/O times as possible! Read as few bytes as possible!
 ### Linux & MacOS
 
 ```shell
-cmake -S . -B build
+cmake -B build .
 cmake --build build -- all
 cmake --build build -- check
 ```
@@ -41,7 +41,7 @@ cmake --build build -- check
 
 ```cmd
 call "C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\VC\Auxiliary\Build\vcvars32.bat"
-cmake -G "NMake Makefiles" -S . -B build
+cmake -G "NMake Makefiles" -B build .
 cmake --build build -- all
 cmake --build build -- check
 ```
