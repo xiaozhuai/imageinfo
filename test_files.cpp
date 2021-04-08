@@ -11,17 +11,20 @@
         fprintf(stderr, "Error ASSET_II, file: %s, line: %d, error != %s\n", file, __LINE__, #error);           \
         exit(1);                                                                                                \
     }                                                                                                           \
-    if (imageInfo.getFormat() != (format)) {                                                                    \
+    else if (imageInfo.getFormat() != (format)) {                                                               \
         fprintf(stderr, "Error ASSET_II, file: %s, line: %d, format != %s\n", file, __LINE__, #format);         \
         exit(1);                                                                                                \
     }                                                                                                           \
-    if (imageInfo.getWidth() != (width)) {                                                                      \
+    else if (imageInfo.getWidth() != (width)) {                                                                 \
         fprintf(stderr, "Error ASSET_II, file: %s, line: %d, width != %ld\n", file, __LINE__, (width));         \
         exit(1);                                                                                                \
     }                                                                                                           \
-    if (imageInfo.getHeight() != (height)) {                                                                    \
+    else if (imageInfo.getHeight() != (height)) {                                                               \
         fprintf(stderr, "Error ASSET_II, file: %s, line: %d, height != %ld\n", file, __LINE__, (height));       \
         exit(1);                                                                                                \
+    }                                                                                                           \
+    else {                                                                                                      \
+        printf("Test passed, file: %s \n", file);                                                               \
     }                                                                                                           \
 } while(0)
 

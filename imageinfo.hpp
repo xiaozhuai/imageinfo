@@ -33,6 +33,7 @@
 
 #include <functional>
 #include <algorithm>
+#include <iostream>
 #include <fstream>
 #include <string>
 #include <regex>
@@ -1327,9 +1328,9 @@ public:
 
     explicit ImageInfo(InputType file, IIFormat likelyFormat = II_FORMAT_UNKNOWN, bool mustBe = false) {
         ReaderType fileReader(file);
+        size_t length = fileReader.size();
         IIReadFunc read = [&](void *buf, off_t offset, size_t size) { fileReader.read(buf, offset, size); };
         IIReadInterface ri(read);
-        size_t length = fileReader.size();
 
         if (likelyFormat != II_FORMAT_UNKNOWN) {
             for (const auto &detector : s_ii_detectors) {
