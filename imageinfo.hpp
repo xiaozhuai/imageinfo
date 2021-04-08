@@ -50,12 +50,12 @@
 #endif
 
 template<typename T>
-static inline T __ii_swap_endian(T u) {
+static inline T ii_swap_endian_(T u) {
     static_assert(sizeof(uint8_t) == 1, "sizeof(uint8_t) != 1");
     union {
         T u;
         uint8_t u8[sizeof(T)];
-    } source, dest;
+    } source{}, dest{};
     source.u = u;
     for (size_t k = 0; k < sizeof(T); k++)
         dest.u8[k] = source.u8[sizeof(T) - k - 1];
@@ -332,15 +332,14 @@ public:
         return std::string((char *) data(), size());
     }
 
-    inline bool cmp(off_t offset, size_t size, const void *mem) {
-        return memcmp(data() + offset, mem, size) == 0;
+    inline bool cmp(off_t offset, size_t size, const void *buf) {
+        return memcmp(data() + offset, buf, size) == 0;
     }
 
-    inline bool cmpOneOf(off_t offset, size_t size, const std::initializer_list<const void *> &mems) {
-        for (auto *mem : mems) {
-            if (memcmp(data() + offset, mem, size) == 0) return true;
-        }
-        return false;
+    inline bool cmpOneOf(off_t offset, size_t size, const std::initializer_list<const void *> &bufList) {
+        return std::any_of(bufList.begin(), bufList.end(), [this, offset, size](const void *buf) {
+            return memcmp(data() + offset, buf, size) == 0;
+        });
     }
 
 private:
@@ -348,7 +347,7 @@ private:
     inline void readInt(off_t offset, T &val, bool swapEndian = false) {
         val = *((T *) (data() + offset));
         if (swapEndian) {
-            val = __ii_swap_endian<T>(val);
+            val = ii_swap_endian_<T>(val);
         }
     }
 
@@ -399,7 +398,7 @@ struct IIDetector {
     IIProcessFunc process;
 };
 
-static const std::vector<IIDetector> s_ii_detectors = {
+static const std::vector<IIDetector> s_ii_detectors = { // NOLINT(cert-err58-cpp)
         ///////////////////////// BMP /////////////////////////
         // https://www.fileformat.info/format/bmp/corion.htm
         IIDetector(
@@ -834,7 +833,7 @@ static const std::vector<IIDetector> s_ii_detectors = {
 
                     buffer = ri.readBuffer(offset, 12);
                     // type == "jp2 "
-                    if (!buffer.cmp(4, 8, "ftypjp2 ")) {
+                    if (!buffer.cmp(4, 4, "ftyp") || !buffer.cmp(8, 4, "jp2 ")) {
                         match = false;
                         return;
                     }
@@ -928,7 +927,7 @@ static const std::vector<IIDetector> s_ii_detectors = {
 
                     buffer = ri.readBuffer(offset, 12);
                     // same as jp2, type == "jpx "
-                    if (!buffer.cmp(4, 8, "ftypjpx ")) {
+                    if (!buffer.cmp(4, 4, "ftyp") || !buffer.cmp(8, 4, "jpx ")) {
                         match = false;
                         return;
                     }
@@ -1178,12 +1177,12 @@ static const std::vector<IIDetector> s_ii_detectors = {
                     uint16_t firstColorMapEntryIndex = buffer.readU16LE(3);
                     uint16_t colorMapLength = buffer.readU16LE(5);
                     uint8_t colorMapEntrySize = buffer.readU8(7);
-                    uint16_t xOrigin = buffer.readU16LE(8);
-                    uint16_t yOrigin = buffer.readU16LE(10);
+                    // uint16_t xOrigin = buffer.readU16LE(8);
+                    // uint16_t yOrigin = buffer.readU16LE(10);
                     uint16_t w = buffer.readU16LE(12);
                     uint16_t h = buffer.readU16LE(14);
-                    uint8_t pixelDepth = buffer.readU8(16);
-                    uint8_t flags = buffer.readU8(17);
+                    // uint8_t pixelDepth = buffer.readU8(16);
+                    // uint8_t flags = buffer.readU8(17);
 
                     if (colorMapType == 0) {            // no color map
                         if (imageType == 0
