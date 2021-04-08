@@ -701,9 +701,7 @@ static const std::vector<IIDetector> s_ii_detectors = {
                         match = false;
                         return;
                     }
-                    off_t offset = 0;
-                    auto buffer = ri.readBuffer(offset, 36);
-                    offset += 36;
+                    auto buffer = ri.readBuffer(0, 36);
                     if (!buffer.cmp(4, 4, "ftyp")) {
                         match = false;
                         return;
@@ -729,12 +727,15 @@ static const std::vector<IIDetector> s_ii_detectors = {
 
                     uint32_t metaLength = buffer.readU32BE(24);
 
-                    off_t metaEnd = offset + metaLength;
-
-                    if (length < metaEnd) {
+                    if (length < 36 + metaLength) {
                         match = false;
                         return;
                     }
+
+                    buffer = ri.readBuffer(36, metaLength);
+
+                    off_t offset = 0;
+                    off_t end = metaLength;
 
                     loop_box:
 
@@ -749,20 +750,18 @@ static const std::vector<IIDetector> s_ii_detectors = {
                      *           - ...
                      *           - ispe
                      */
-                    while (offset < metaEnd) {
-                        buffer = ri.readBuffer(offset, 8);
-                        // std::string boxType = buffer.readString(4, 4);
-                        uint32_t boxSize = buffer.readU32BE(0);
+                    while (offset < end) {
+                        // std::string boxType = buffer.readString(offset + 4, 4);
+                        uint32_t boxSize = buffer.readU32BE(offset);
                         // std::cout << boxSize << ", " << boxType << "\n";
-                        if (buffer.cmpOneOf(4, 4, {"iprp", "ipco"})) {
-                            metaEnd = offset + boxSize;
+                        if (buffer.cmpOneOf(offset + 4, 4, {"iprp", "ipco"})) {
+                            end = offset + boxSize;
                             offset += 8;
                             goto loop_box;
                         }
-                        if (buffer.cmp(4, 4, "ispe")) {
-                            buffer = ri.readBuffer(offset + 12, 8);
-                            width = buffer.readU32BE(0);
-                            height = buffer.readU32BE(4);
+                        if (buffer.cmp(offset + 4, 4, "ispe")) {
+                            width = buffer.readU32BE(offset + 12);
+                            height = buffer.readU32BE(offset + 16);
                             break;
                         }
                         offset += boxSize;
