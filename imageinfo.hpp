@@ -564,11 +564,14 @@ static const std::vector<IIDetector> s_ii_detectors = {
                     auto header = buffer.toString();
                     std::smatch results;
 
-                    std::regex_search(header, results, std::regex(R"(\s(\-|\+)X\s(\d+)\s)"));
+                    static const std::regex XPattern(R"(\s(\-|\+)X\s(\d+)\s)");
+                    static const std::regex YPattern(R"(\s(\-|\+)Y\s(\d+)\s)");
+
+                    std::regex_search(header, results, XPattern);
                     if (results.size() < 3) return;
                     auto widthStr = results.str(2);
 
-                    std::regex_search(header, results, std::regex(R"(\s(\-|\+)Y\s(\d+)\s)"));
+                    std::regex_search(header, results, YPattern);
                     if (results.size() < 3) return;
                     auto heightStr = results.str(2);
 
@@ -681,7 +684,7 @@ static const std::vector<IIDetector> s_ii_detectors = {
                     }
                     match = true;
 
-                    const std::unordered_map<std::string, int64_t> TYPE_SIZE_MAP = {
+                    static const std::unordered_map<std::string, int64_t> TYPE_SIZE_MAP = {
                             {"ICON", 32},
                             {"ICN#", 32},
                             {"icm#", 16},
