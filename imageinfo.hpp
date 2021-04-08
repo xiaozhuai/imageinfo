@@ -211,8 +211,6 @@ private:
     IIRawData m_data;
 };
 
-typedef std::function<void(void *buf, off_t offset, size_t size)> IIReadFunc;
-
 class IIBuffer {
 public:
     IIBuffer() = default;
@@ -359,96 +357,13 @@ private:
     size_t m_size = 0;
 };
 
+typedef std::function<void(void *buf, off_t offset, size_t size)> IIReadFunc;
+
 class IIReadInterface {
 public:
     IIReadInterface() = delete;
 
-    explicit IIReadInterface(IIReadFunc &r) : read(r) {}
-
-public:
-    inline uint8_t readU8(off_t offset) {
-        uint8_t val;
-        readInt(offset, val, false);
-        return val;
-    }
-
-    inline int8_t readS8(off_t offset) {
-        int8_t val;
-        readInt(offset, val, false);
-        return val;
-    }
-
-    inline uint16_t readU16LE(off_t offset) {
-        uint16_t val;
-        readInt(offset, val, false);
-        return val;
-    }
-
-    inline uint16_t readU16BE(off_t offset) {
-        uint16_t val;
-        readInt(offset, val, true);
-        return val;
-    }
-
-    inline int16_t readS16LE(off_t offset) {
-        int16_t val;
-        readInt(offset, val, false);
-        return val;
-    }
-
-    inline int16_t readS16BE(off_t offset) {
-        int16_t val;
-        readInt(offset, val, true);
-        return val;
-    }
-
-    inline uint32_t readU32LE(off_t offset) {
-        uint32_t val;
-        readInt(offset, val, false);
-        return val;
-    }
-
-    inline uint32_t readU32BE(off_t offset) {
-        uint32_t val;
-        readInt(offset, val, true);
-        return val;
-    }
-
-    inline int32_t readS32LE(off_t offset) {
-        int32_t val;
-        readInt(offset, val, false);
-        return val;
-    }
-
-    inline int32_t readS32BE(off_t offset) {
-        int32_t val;
-        readInt(offset, val, true);
-        return val;
-    }
-
-    inline uint64_t readU64LE(off_t offset) {
-        uint64_t val;
-        readInt(offset, val, false);
-        return val;
-    }
-
-    inline uint64_t readU64BE(off_t offset) {
-        uint64_t val;
-        readInt(offset, val, true);
-        return val;
-    }
-
-    inline int64_t readS64LE(off_t offset) {
-        int64_t val;
-        readInt(offset, val, false);
-        return val;
-    }
-
-    inline int64_t readS64BE(off_t offset) {
-        int64_t val;
-        readInt(offset, val, true);
-        return val;
-    }
+    explicit IIReadInterface(IIReadFunc &readFunc) : m_readFunc(readFunc) {}
 
     inline IIBuffer readBuffer(off_t offset, size_t size) {
         IIBuffer buffer(size);
@@ -456,38 +371,13 @@ public:
         return buffer;
     }
 
-    inline std::string readString(off_t offset, size_t size) {
-        std::string str(size, 0);
-        read((void *) str.data(), offset, size);
-        return str;
-    }
-
-    inline bool cmp(off_t offset, size_t size, const void *mem) {
-        std::vector<uint8_t> m1(size);
-        read(m1.data(), offset, size);
-        return memcmp(m1.data(), mem, size) == 0;
-    }
-
-    inline bool cmpOneOf(off_t offset, size_t size, const std::initializer_list<const void *> &mems) {
-        std::vector<uint8_t> m1(size);
-        read(m1.data(), offset, size);
-        for (auto *mem : mems) {
-            if (memcmp(m1.data(), mem, size) == 0) return true;
-        }
-        return false;
+private:
+    inline void read(void *buf, off_t offset, size_t size) {
+        m_readFunc(buf, offset, size);
     }
 
 private:
-    template<typename T>
-    inline void readInt(off_t offset, T &val, bool swapEndian) {
-        read(&val, offset, sizeof(T));
-        if (swapEndian) {
-            val = __ii_swap_endian<T>(val);
-        }
-    }
-
-private:
-    IIReadFunc &read;
+    IIReadFunc &m_readFunc;
 };
 
 typedef std::function<void(size_t length, IIReadInterface &ri,
@@ -979,24 +869,24 @@ static const std::vector<IIDetector> s_ii_detectors = {
                         match = false;
                         return;
                     }
-                    if (!ri.cmp(0, 2, "\xFF\xD8")) {
+                    auto buffer = ri.readBuffer(0, 2);
+                    if (!buffer.cmp(0, 2, "\xFF\xD8")) {
                         match = false;
                         return;
                     }
                     match = true;
 
                     size_t offset = 2;
-                    while (offset + 4 <= length) {
-                        auto section = ri.readBuffer(offset, offset + 9 <= length ? 9 : 4);
-                        uint16_t sectionSize = section.readU16BE(2);
+                    while (offset + 9 <= length) {
+                        buffer = ri.readBuffer(offset, 9);
+                        uint16_t sectionSize = buffer.readU16BE(2);
 
                         // 0xFFC0 is baseline standard (SOF0)
                         // 0xFFC1 is baseline optimized (SOF1)
                         // 0xFFC2 is progressive (SOF2)
-                        if (section.cmpOneOf(0, 2, {"\xFF\xC0", "\xFF\xC1", "\xFF\xC2"})
-                            && offset + 9 <= length) {
-                            height = section.readU16BE(5);
-                            width = section.readU16BE(7);
+                        if (buffer.cmpOneOf(0, 2, {"\xFF\xC0", "\xFF\xC1", "\xFF\xC2"})) {
+                            height = buffer.readU16BE(5);
+                            width = buffer.readU16BE(7);
                             break;
                         }
                         offset += sectionSize + 2;
@@ -1159,19 +1049,19 @@ static const std::vector<IIDetector> s_ii_detectors = {
                         match = false;
                         return;
                     }
-                    auto header = ri.readBuffer(0, 8);
-                    if (!header.cmpOneOf(0, 4, {"\x49\x49\x2A\x00", "\x4D\x4D\x00\x2A"})) {
+                    auto buffer = ri.readBuffer(0, 8);
+                    if (!buffer.cmpOneOf(0, 4, {"\x49\x49\x2A\x00", "\x4D\x4D\x00\x2A"})) {
                         match = false;
                         return;
                     }
                     match = true;
-                    bool needSwap = header[0] == 0x4D;
+                    bool needSwap = buffer[0] == 0x4D;
 
-                    uint32_t offset = needSwap ? header.readU32BE(4) : header.readU32LE(4);
+                    uint32_t offset = needSwap ? buffer.readU32BE(4) : buffer.readU32LE(4);
                     if (length < offset + 2) return;
 
-                    uint16_t numEntry = needSwap ? ri.readU16BE(offset) : ri.readU16LE(offset);
-
+                    buffer = ri.readBuffer(offset, 2);
+                    uint16_t numEntry = needSwap ? buffer.readU16BE(0) : buffer.readU16LE(0);
                     offset += 2;
 
                     for (uint16_t i = 0;
@@ -1180,7 +1070,7 @@ static const std::vector<IIDetector> s_ii_detectors = {
                          && (width == -1 || height == -1);
                          ++i, offset += 12) {
 
-                        auto buffer = ri.readBuffer(offset, 12);
+                        buffer = ri.readBuffer(offset, 12);
 
                         uint16_t tag = needSwap ? buffer.readU16BE(0) : buffer.readU16LE(0);
                         uint16_t type = needSwap ? buffer.readU16BE(2) : buffer.readU16LE(2);
@@ -1262,14 +1152,17 @@ static const std::vector<IIDetector> s_ii_detectors = {
                         return;
                     }
 
-                    auto buffer = ri.readBuffer(0, 18);
+                    auto buffer = ri.readBuffer(length - 18, 18);
 
-                    if (ri.cmp(length - 18, 18, "TRUEVISION-XFILE.\x00")) {
+                    if (buffer.cmp(0, 18, "TRUEVISION-XFILE.\x00")) {
                         match = true;
+                        buffer = ri.readBuffer(0, 18);
                         width = buffer.readU16LE(12);
                         height = buffer.readU16LE(14);
                         return;
                     }
+
+                    buffer = ri.readBuffer(0, 18);
 
                     uint8_t idLen = buffer.readU8(0);
                     if (length < (size_t) idLen + 18) {
