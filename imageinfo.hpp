@@ -49,9 +49,17 @@
 #include <android/asset_manager.h>
 #endif
 
+static_assert(sizeof(uint8_t) == 1, "sizeof(uint8_t) != 1");
+static_assert(sizeof(int8_t) == 1, "sizeof(int8_t) != 1");
+static_assert(sizeof(uint16_t) == 2, "sizeof(uint16_t) != 2");
+static_assert(sizeof(int16_t) == 2, "sizeof(int16_t) != 2");
+static_assert(sizeof(uint32_t) == 4, "sizeof(uint32_t) != 4");
+static_assert(sizeof(int32_t) == 4, "sizeof(int32_t) != 4");
+static_assert(sizeof(uint64_t) == 8, "sizeof(uint64_t) != 8");
+static_assert(sizeof(int64_t) == 8, "sizeof(int64_t) != 8");
+
 template<typename T>
 static inline T ii_swap_endian_(T u) {
-    static_assert(sizeof(uint8_t) == 1, "sizeof(uint8_t) != 1");
     union {
         T u;
         uint8_t u8[sizeof(T)];
