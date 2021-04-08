@@ -13,6 +13,7 @@ imageinfo 并不是通过扩展名来识别图片格式，而是通过文件头�
 * [x] dds
 * [x] gif
 * [x] hdr (pic)
+* [x] heic
 * [x] icns
 * [x] ico
 * [x] jp2

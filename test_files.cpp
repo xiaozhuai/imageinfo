@@ -47,6 +47,12 @@ int main() {
     }
 
     {
+        ASSET_II(IMAGES_DIRECTORY "valid/heic/sample.heic", II_ERR_OK, II_FORMAT_HEIC, 122l, 456l);
+        ASSET_II(IMAGES_DIRECTORY "valid/heic/sample2.heic", II_ERR_OK, II_FORMAT_HEIC, 1440l, 960l);
+
+    }
+
+    {
         ASSET_II(IMAGES_DIRECTORY "valid/icns/sample.icns", II_ERR_OK, II_FORMAT_ICNS, 128l, 128l);
     }
 

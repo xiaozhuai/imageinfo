@@ -68,6 +68,7 @@ enum IIFormat {
     II_FORMAT_DDS,
     II_FORMAT_GIF,
     II_FORMAT_HDR,
+    II_FORMAT_HEIC,
     II_FORMAT_ICNS,
     II_FORMAT_ICO,
     II_FORMAT_JP2,
@@ -682,6 +683,90 @@ static const std::vector<IIDetector> s_ii_detectors = {
 
                     width = std::stol(widthStr);
                     height = std::stol(heightStr);
+                }
+        ),
+
+        ///////////////////////// HEIC /////////////////////////
+        // https://nokiatech.github.io/heif/technical.html
+        // https://www.jianshu.com/p/b016d10a087d
+        IIDetector(
+                II_FORMAT_HEIC,
+                "heic",
+                "heic",
+                "image/heic",
+                [](size_t length, IIReadInterface &ri,
+                   bool &match, int64_t &width, int64_t &height,
+                   std::vector<std::array<int64_t, 2>> &entrySizes) {
+                    if (length < 36) {
+                        match = false;
+                        return;
+                    }
+                    off_t offset = 0;
+                    auto buffer = ri.readBuffer(offset, 36);
+                    offset += 36;
+                    if (!buffer.cmp(4, 4, "ftyp")) {
+                        match = false;
+                        return;
+                    }
+                    
+                    /**
+                     * Major Brand
+                     *
+                     * HEIF: "mif1", "msf1"
+                     * HEIC: "heic", "heix", "hevc", "hevx"
+                     *
+                     */
+                    if (!buffer.cmpOneOf(8, 4, {"mif1", "msf1", "heic", "heix", "hevc", "hevx"})) {
+                        match = false;
+                        return;
+                    }
+                    if (!buffer.cmp(28, 4, "meta")) {
+                        match = false;
+                        return;
+                    }
+
+                    match = true;
+
+                    uint32_t metaLength = buffer.readU32BE(24);
+
+                    off_t metaEnd = offset + metaLength;
+
+                    if (length < metaEnd) {
+                        match = false;
+                        return;
+                    }
+
+                    loop_box:
+
+                    /**
+                     * find ispe box
+                     *
+                     * meta
+                     *   - ...
+                     *   - iprp
+                     *       - ...
+                     *       - ipco
+                     *           - ...
+                     *           - ispe
+                     */
+                    while (offset < metaEnd) {
+                        buffer = ri.readBuffer(offset, 8);
+                        // std::string boxType = buffer.readString(4, 4);
+                        uint32_t boxSize = buffer.readU32BE(0);
+                        // std::cout << boxSize << ", " << boxType << "\n";
+                        if (buffer.cmpOneOf(4, 4, {"iprp", "ipco"})) {
+                            metaEnd = offset + boxSize;
+                            offset += 8;
+                            goto loop_box;
+                        }
+                        if (buffer.cmp(4, 4, "ispe")) {
+                            buffer = ri.readBuffer(offset + 12, 8);
+                            width = buffer.readU32BE(0);
+                            height = buffer.readU32BE(4);
+                            break;
+                        }
+                        offset += boxSize;
+                    }
                 }
         ),
 

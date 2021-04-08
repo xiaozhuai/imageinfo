@@ -13,6 +13,7 @@ As few I/O times as possible! Read as few bytes as possible!
 * [x] dds
 * [x] gif
 * [x] hdr (pic)
+* [x] heic
 * [x] icns
 * [x] ico
 * [x] jp2
