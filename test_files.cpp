@@ -28,6 +28,7 @@
 int main() {
     {
         ASSET_II(IMAGES_DIRECTORY "valid/bmp/sample.bmp", II_ERR_OK, II_FORMAT_BMP, 123l, 456l);
+        ASSET_II(IMAGES_DIRECTORY "valid/bmp/sample2.bmp", II_ERR_OK, II_FORMAT_BMP, 123l, 456l);
     }
 
     {

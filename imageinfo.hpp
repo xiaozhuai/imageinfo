@@ -529,9 +529,9 @@ static const std::vector<IIDetector> s_ii_detectors = {
                         return;
                     }
                     match = true;
-                    width = abs(buffer.readS32LE(18));
+                    width = buffer.readS32LE(18);
                     // bmp height can be negative, it means flip Y
-                    height = abs(buffer.readS32LE(22));
+                    height = std::abs(buffer.readS32LE(22));
                 }
         ),
 
@@ -708,7 +708,7 @@ static const std::vector<IIDetector> s_ii_detectors = {
                         match = false;
                         return;
                     }
-                    
+
                     /**
                      * Major Brand
                      *
