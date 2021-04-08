@@ -660,7 +660,7 @@ static const std::vector<IIDetector> s_ii_detectors = {
                         return;
                     }
 
-                    // TODO Max header size ?
+                    // TODO Max header size ? Or just read header line by line
                     auto buffer = ri.readBuffer(0, std::min(length, (size_t) 256));
                     if (!buffer.cmpOneOf(0, 6, {"#?RGBE", "#?XYZE"})) {
                         match = false;
@@ -672,24 +672,16 @@ static const std::vector<IIDetector> s_ii_detectors = {
                     auto header = buffer.toString();
                     std::smatch results;
 
-                    std::regex_search(header, results, std::regex(R"(\s(\-|\+)X\s)"));
-                    if (results.empty()) return;
-                    off_t xPosBegin = results.position(0) + 4;
+                    std::regex_search(header, results, std::regex(R"(\s(\-|\+)X\s(\d+)\s)"));
+                    if (results.size() < 3) return;
+                    auto widthStr = results.str(2);
 
-                    std::regex_search(header, results, std::regex(R"(\s)"));
-                    if (results.empty()) return;
-                    off_t xPosEnd = results.position(0);
+                    std::regex_search(header, results, std::regex(R"(\s(\-|\+)Y\s(\d+)\s)"));
+                    if (results.size() < 3) return;
+                    auto heightStr = results.str(2);
 
-                    std::regex_search(header, results, std::regex(R"(\s(\-|\+)Y\s)"));
-                    if (results.empty()) return;
-                    off_t yPosBegin = results.position(0) + 4;
-
-                    std::regex_search(header, results, std::regex(R"(\s)"));
-                    if (results.empty()) return;
-                    off_t yPosEnd = results.position(0);
-
-                    width = std::stol(header.substr(xPosBegin, xPosEnd));
-                    height = std::stol(header.substr(yPosBegin, yPosEnd));
+                    width = std::stol(widthStr);
+                    height = std::stol(heightStr);
                 }
         ),
 
