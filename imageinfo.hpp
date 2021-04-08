@@ -387,8 +387,8 @@ private:
     IIReadFunc &m_readFunc;
 };
 
-typedef std::function<void(size_t length, IIReadInterface &ri,
-                           bool &match, int64_t &width, int64_t &height,
+typedef std::function<bool(size_t length, IIReadInterface &ri,
+                           int64_t &width, int64_t &height,
                            std::vector<std::array<int64_t, 2>> &entrySizes)> IIProcessFunc;
 
 struct IIDetector {
@@ -415,21 +415,20 @@ static const std::vector<IIDetector> s_ii_detectors = { // NOLINT(cert-err58-cpp
                 "bmp",
                 "image/bmp",
                 [](size_t length, IIReadInterface &ri,
-                   bool &match, int64_t &width, int64_t &height,
-                   std::vector<std::array<int64_t, 2>> &entrySizes) {
+                   int64_t &width, int64_t &height,
+                   std::vector<std::array<int64_t, 2>> &entrySizes) -> bool {
                     if (length < 26) {
-                        match = false;
-                        return;
+                        return false;
                     }
                     auto buffer = ri.readBuffer(0, 26);
                     if (!buffer.cmp(0, 2, "BM")) {
-                        match = false;
-                        return;
+                        return false;
                     }
-                    match = true;
                     width = buffer.readS32LE(18);
                     // bmp height can be negative, it means flip Y
                     height = std::abs(buffer.readS32LE(22));
+
+                    return true;
                 }
         ),
 
@@ -440,30 +439,26 @@ static const std::vector<IIDetector> s_ii_detectors = { // NOLINT(cert-err58-cpp
                 "cur",
                 "image/cur",
                 [](size_t length, IIReadInterface &ri,
-                   bool &match, int64_t &width, int64_t &height,
-                   std::vector<std::array<int64_t, 2>> &entrySizes) {
+                   int64_t &width, int64_t &height,
+                   std::vector<std::array<int64_t, 2>> &entrySizes) -> bool {
                     if (length < 6) {
-                        match = false;
-                        return;
+                        return false;
                     }
                     auto buffer = ri.readBuffer(0, 6);
                     // Same with ico, but TYPE == 2
                     if (!buffer.cmp(0, 4, "\x00\x00\x02\x00")) {
-                        match = false;
-                        return;
+                        return false;
                     }
                     uint16_t entryCount = buffer.readU16LE(4);
                     if (entryCount == 0) {
-                        match = false;
-                        return;
+                        return false;
                     }
                     const size_t ENTRY_SIZE = 16;
                     size_t entryTotalSize = entryCount * ENTRY_SIZE;
 
                     off_t offset = 6;
                     if (length < offset + entryTotalSize) {
-                        match = false;
-                        return;
+                        return false;
                     }
                     buffer = ri.readBuffer(offset, entryTotalSize);
                     offset += entryTotalSize;
@@ -482,16 +477,15 @@ static const std::vector<IIDetector> s_ii_detectors = { // NOLINT(cert-err58-cpp
                     }
 
                     if (length < (size_t) offset) {
-                        match = false;
-                        return;
+                        return false;
                     }
-
-                    match = true;
 
                     width = sizes.front()[0];
                     height = sizes.front()[1];
 
                     sizes.swap(entrySizes);
+
+                    return true;
                 }
         ),
 
@@ -502,20 +496,19 @@ static const std::vector<IIDetector> s_ii_detectors = { // NOLINT(cert-err58-cpp
                 "dds",
                 "image/dds",
                 [](size_t length, IIReadInterface &ri,
-                   bool &match, int64_t &width, int64_t &height,
-                   std::vector<std::array<int64_t, 2>> &entrySizes) {
+                   int64_t &width, int64_t &height,
+                   std::vector<std::array<int64_t, 2>> &entrySizes) -> bool {
                     if (length < 20) {
-                        match = false;
-                        return;
+                        return false;
                     }
                     auto buffer = ri.readBuffer(0, 20);
                     if (!buffer.cmp(0, 4, "DDS ")) {
-                        match = false;
-                        return;
+                        return false;
                     }
-                    match = true;
                     height = buffer.readU32LE(12);
                     width = buffer.readU32LE(16);
+
+                    return true;
                 }
         ),
 
@@ -527,20 +520,20 @@ static const std::vector<IIDetector> s_ii_detectors = { // NOLINT(cert-err58-cpp
                 "gif",
                 "image/gif",
                 [](size_t length, IIReadInterface &ri,
-                   bool &match, int64_t &width, int64_t &height,
-                   std::vector<std::array<int64_t, 2>> &entrySizes) {
+                   int64_t &width, int64_t &height,
+                   std::vector<std::array<int64_t, 2>> &entrySizes) -> bool {
                     if (length < 10) {
-                        match = false;
-                        return;
+                        return false;
                     }
                     auto buffer = ri.readBuffer(0, 10);
                     if (!buffer.cmpOneOf(0, 6, {"GIF87a", "GIF89a"})) {
-                        match = false;
-                        return;
+                        return false;
                     }
-                    match = true;
+
                     width = buffer.readU16LE(6);
                     height = buffer.readU16LE(8);
+
+                    return true;
                 }
         ),
 
@@ -552,21 +545,17 @@ static const std::vector<IIDetector> s_ii_detectors = { // NOLINT(cert-err58-cpp
                 "hdr",
                 "image/vnd.radiance",
                 [](size_t length, IIReadInterface &ri,
-                   bool &match, int64_t &width, int64_t &height,
-                   std::vector<std::array<int64_t, 2>> &entrySizes) {
+                   int64_t &width, int64_t &height,
+                   std::vector<std::array<int64_t, 2>> &entrySizes) -> bool {
                     if (length < 6) {
-                        match = false;
-                        return;
+                        return false;
                     }
 
                     // TODO Max header size ? Or just read header line by line
                     auto buffer = ri.readBuffer(0, std::min(length, (size_t) 256));
                     if (!buffer.cmpOneOf(0, 6, {"#?RGBE", "#?XYZE"})) {
-                        match = false;
-                        return;
+                        return false;
                     }
-
-                    match = true;
 
                     auto header = buffer.toString();
                     std::smatch results;
@@ -574,16 +563,20 @@ static const std::vector<IIDetector> s_ii_detectors = { // NOLINT(cert-err58-cpp
                     static const std::regex XPattern(R"(\s(\-|\+)X\s(\d+)\s)");
                     static const std::regex YPattern(R"(\s(\-|\+)Y\s(\d+)\s)");
 
+                    std::string widthStr;
+                    std::string heightStr;
+
                     std::regex_search(header, results, XPattern);
-                    if (results.size() < 3) return;
-                    auto widthStr = results.str(2);
-
+                    if (results.size() >= 3) widthStr = results.str(2);
                     std::regex_search(header, results, YPattern);
-                    if (results.size() < 3) return;
-                    auto heightStr = results.str(2);
+                    if (results.size() >= 3) heightStr = results.str(2);
 
-                    width = std::stol(widthStr);
-                    height = std::stol(heightStr);
+                    if (!widthStr.empty() && !heightStr.empty()) {
+                        width = std::stol(widthStr);
+                        height = std::stol(heightStr);
+                    }
+
+                    return true;
                 }
         ),
 
@@ -596,16 +589,14 @@ static const std::vector<IIDetector> s_ii_detectors = { // NOLINT(cert-err58-cpp
                 "heic",
                 "image/heic",
                 [](size_t length, IIReadInterface &ri,
-                   bool &match, int64_t &width, int64_t &height,
-                   std::vector<std::array<int64_t, 2>> &entrySizes) {
+                   int64_t &width, int64_t &height,
+                   std::vector<std::array<int64_t, 2>> &entrySizes) -> bool {
                     if (length < 36) {
-                        match = false;
-                        return;
+                        return false;
                     }
                     auto buffer = ri.readBuffer(0, 36);
                     if (!buffer.cmp(4, 4, "ftyp")) {
-                        match = false;
-                        return;
+                        return false;
                     }
 
                     /**
@@ -616,21 +607,16 @@ static const std::vector<IIDetector> s_ii_detectors = { // NOLINT(cert-err58-cpp
                      *
                      */
                     if (!buffer.cmpOneOf(8, 4, {"mif1", "msf1", "heic", "heix", "hevc", "hevx"})) {
-                        match = false;
-                        return;
+                        return false;
                     }
                     if (!buffer.cmp(28, 4, "meta")) {
-                        match = false;
-                        return;
+                        return false;
                     }
-
-                    match = true;
 
                     uint32_t metaLength = buffer.readU32BE(24);
 
                     if (length < 36 + metaLength) {
-                        match = false;
-                        return;
+                        return false;
                     }
 
                     buffer = ri.readBuffer(36, metaLength);
@@ -667,6 +653,8 @@ static const std::vector<IIDetector> s_ii_detectors = { // NOLINT(cert-err58-cpp
                         }
                         offset += boxSize;
                     }
+
+                    return true;
                 }
         ),
 
@@ -677,19 +665,16 @@ static const std::vector<IIDetector> s_ii_detectors = { // NOLINT(cert-err58-cpp
                 "icns",
                 "image/icns",
                 [](size_t length, IIReadInterface &ri,
-                   bool &match, int64_t &width, int64_t &height,
-                   std::vector<std::array<int64_t, 2>> &entrySizes) {
+                   int64_t &width, int64_t &height,
+                   std::vector<std::array<int64_t, 2>> &entrySizes) -> bool {
                     if (length < 8) {
-                        match = false;
-                        return;
+                        return false;
                     }
                     auto buffer = ri.readBuffer(0, 8);
                     uint32_t fileLength = buffer.readU32BE(4);
                     if (!buffer.cmp(0, 4, "icns") || fileLength != length) {
-                        match = false;
-                        return;
+                        return false;
                     }
-                    match = true;
 
                     static const std::unordered_map<std::string, int64_t> TYPE_SIZE_MAP = {
                             {"ICON", 32},
@@ -745,6 +730,8 @@ static const std::vector<IIDetector> s_ii_detectors = { // NOLINT(cert-err58-cpp
 
                     width = maxSize;
                     height = maxSize;
+
+                    return true;
                 }
         ),
 
@@ -755,30 +742,26 @@ static const std::vector<IIDetector> s_ii_detectors = { // NOLINT(cert-err58-cpp
                 "ico",
                 "image/ico",
                 [](size_t length, IIReadInterface &ri,
-                   bool &match, int64_t &width, int64_t &height,
-                   std::vector<std::array<int64_t, 2>> &entrySizes) {
+                   int64_t &width, int64_t &height,
+                   std::vector<std::array<int64_t, 2>> &entrySizes) -> bool {
                     if (length < 6) {
-                        match = false;
-                        return;
+                        return false;
                     }
                     auto buffer = ri.readBuffer(0, 6);
                     // TYPE == 1
                     if (!buffer.cmp(0, 4, "\x00\x00\x01\x00")) {
-                        match = false;
-                        return;
+                        return false;
                     }
                     uint16_t entryCount = buffer.readU16LE(4);
                     if (entryCount == 0) {
-                        match = false;
-                        return;
+                        return false;
                     }
                     const size_t ENTRY_SIZE = 16;
                     size_t entryTotalSize = entryCount * ENTRY_SIZE;
 
                     off_t offset = 6;
                     if (length < offset + entryTotalSize) {
-                        match = false;
-                        return;
+                        return false;
                     }
                     buffer = ri.readBuffer(offset, entryTotalSize);
                     offset += entryTotalSize;
@@ -797,16 +780,15 @@ static const std::vector<IIDetector> s_ii_detectors = { // NOLINT(cert-err58-cpp
                     }
 
                     if (length < (size_t) offset) {
-                        match = false;
-                        return;
+                        return false;
                     }
-
-                    match = true;
 
                     width = sizes.front()[0];
                     height = sizes.front()[1];
 
                     sizes.swap(entrySizes);
+
+                    return true;
                 }
         ),
 
@@ -818,34 +800,29 @@ static const std::vector<IIDetector> s_ii_detectors = { // NOLINT(cert-err58-cpp
                 "jp2",
                 "image/jp2",
                 [](size_t length, IIReadInterface &ri,
-                   bool &match, int64_t &width, int64_t &height,
-                   std::vector<std::array<int64_t, 2>> &entrySizes) {
+                   int64_t &width, int64_t &height,
+                   std::vector<std::array<int64_t, 2>> &entrySizes) -> bool {
                     if (length < 8) {
-                        match = false;
-                        return;
+                        return false;
                     }
                     auto buffer = ri.readBuffer(0, 8);
 
                     if (!buffer.cmp(4, 4, "jP  ")) {
-                        match = false;
-                        return;
+                        return false;
                     }
 
                     uint32_t signatureLength = buffer.readU32BE(0);
                     off_t offset = signatureLength;
 
                     if (length < offset + 12) {
-                        match = false;
-                        return;
+                        return false;
                     }
 
                     buffer = ri.readBuffer(offset, 12);
                     // type == "jp2 "
                     if (!buffer.cmp(4, 4, "ftyp") || !buffer.cmp(8, 4, "jp2 ")) {
-                        match = false;
-                        return;
+                        return false;
                     }
-                    match = true;
 
                     uint32_t ftypLength = buffer.readU32BE(0);
                     offset += ftypLength;
@@ -862,6 +839,8 @@ static const std::vector<IIDetector> s_ii_detectors = { // NOLINT(cert-err58-cpp
                         uint32_t boxLength = buffer.readU32BE(0);
                         offset += boxLength;
                     }
+
+                    return true;
                 }
         ),
 
@@ -873,18 +852,15 @@ static const std::vector<IIDetector> s_ii_detectors = { // NOLINT(cert-err58-cpp
                 "jpeg",
                 "image/jpeg",
                 [](size_t length, IIReadInterface &ri,
-                   bool &match, int64_t &width, int64_t &height,
-                   std::vector<std::array<int64_t, 2>> &entrySizes) {
+                   int64_t &width, int64_t &height,
+                   std::vector<std::array<int64_t, 2>> &entrySizes) -> bool {
                     if (length < 2) {
-                        match = false;
-                        return;
+                        return false;
                     }
                     auto buffer = ri.readBuffer(0, 2);
                     if (!buffer.cmp(0, 2, "\xFF\xD8")) {
-                        match = false;
-                        return;
+                        return false;
                     }
-                    match = true;
 
                     size_t offset = 2;
                     while (offset + 9 <= length) {
@@ -901,6 +877,8 @@ static const std::vector<IIDetector> s_ii_detectors = { // NOLINT(cert-err58-cpp
                         }
                         offset += sectionSize + 2;
                     }
+
+                    return true;
                 }
         ),
 
@@ -912,34 +890,29 @@ static const std::vector<IIDetector> s_ii_detectors = { // NOLINT(cert-err58-cpp
                 "jpx",
                 "image/jpx",
                 [](size_t length, IIReadInterface &ri,
-                   bool &match, int64_t &width, int64_t &height,
-                   std::vector<std::array<int64_t, 2>> &entrySizes) {
+                   int64_t &width, int64_t &height,
+                   std::vector<std::array<int64_t, 2>> &entrySizes) -> bool {
                     if (length < 8) {
-                        match = false;
-                        return;
+                        return false;
                     }
                     auto buffer = ri.readBuffer(0, 8);
 
                     if (!buffer.cmp(4, 4, "jP  ")) {
-                        match = false;
-                        return;
+                        return false;
                     }
 
                     uint32_t signatureLength = buffer.readU32BE(0);
                     off_t offset = signatureLength;
 
                     if (length < offset + 12) {
-                        match = false;
-                        return;
+                        return false;
                     }
 
                     buffer = ri.readBuffer(offset, 12);
                     // same as jp2, type == "jpx "
                     if (!buffer.cmp(4, 4, "ftyp") || !buffer.cmp(8, 4, "jpx ")) {
-                        match = false;
-                        return;
+                        return false;
                     }
-                    match = true;
 
                     uint32_t ftypLength = buffer.readU32BE(0);
                     offset += ftypLength;
@@ -956,6 +929,8 @@ static const std::vector<IIDetector> s_ii_detectors = { // NOLINT(cert-err58-cpp
                         uint32_t boxLength = buffer.readU32BE(0);
                         offset += boxLength;
                     }
+
+                    return true;
                 }
         ),
 
@@ -966,20 +941,20 @@ static const std::vector<IIDetector> s_ii_detectors = { // NOLINT(cert-err58-cpp
                 "ktx",
                 "image/ktx",
                 [](size_t length, IIReadInterface &ri,
-                   bool &match, int64_t &width, int64_t &height,
-                   std::vector<std::array<int64_t, 2>> &entrySizes) {
+                   int64_t &width, int64_t &height,
+                   std::vector<std::array<int64_t, 2>> &entrySizes) -> bool {
                     if (length < 44) {
-                        match = false;
-                        return;
+                        return false;
                     }
                     auto buffer = ri.readBuffer(0, 44);
                     if (!buffer.cmp(1, 6, "KTX 11")) {
-                        match = false;
-                        return;
+                        return false;
                     }
-                    match = true;
+
                     width = buffer.readU32LE(36);
                     height = buffer.readU32LE(40);
+
+                    return true;
                 }
         ),
 
@@ -991,20 +966,16 @@ static const std::vector<IIDetector> s_ii_detectors = { // NOLINT(cert-err58-cpp
                 "png",
                 "image/png",
                 [](size_t length, IIReadInterface &ri,
-                   bool &match, int64_t &width, int64_t &height,
-                   std::vector<std::array<int64_t, 2>> &entrySizes) {
+                   int64_t &width, int64_t &height,
+                   std::vector<std::array<int64_t, 2>> &entrySizes) -> bool {
                     if (length < 4) {
-                        match = false;
-                        return;
+                        return false;
                     }
 
                     auto buffer = ri.readBuffer(0, std::min(length, (size_t) 40));
                     if (!buffer.cmp(0, 4, "\x89PNG")) {
-                        match = false;
-                        return;
+                        return false;
                     }
-
-                    match = true;
 
                     std::string firstChunkType = buffer.readString(12, 4);
                     if (firstChunkType == "IHDR" && buffer.size() >= 24) {
@@ -1016,6 +987,8 @@ static const std::vector<IIDetector> s_ii_detectors = { // NOLINT(cert-err58-cpp
                             height = buffer.readU32BE(36);
                         }
                     }
+
+                    return true;
                 }
         ),
 
@@ -1026,22 +999,20 @@ static const std::vector<IIDetector> s_ii_detectors = { // NOLINT(cert-err58-cpp
                 "psd",
                 "image/psd",
                 [](size_t length, IIReadInterface &ri,
-                   bool &match, int64_t &width, int64_t &height,
-                   std::vector<std::array<int64_t, 2>> &entrySizes) {
+                   int64_t &width, int64_t &height,
+                   std::vector<std::array<int64_t, 2>> &entrySizes) -> bool {
                     if (length < 22) {
-                        match = false;
-                        return;
+                        return false;
                     }
                     auto buffer = ri.readBuffer(0, 22);
                     if (!buffer.cmp(0, 6, "8BPS\x00\x01")) {
-                        match = false;
-                        return;
+                        return false;
                     }
-
-                    match = true;
 
                     height = buffer.readU32BE(14);
                     width = buffer.readU32BE(18);
+
+                    return true;
                 }
         ),
 
@@ -1053,22 +1024,22 @@ static const std::vector<IIDetector> s_ii_detectors = { // NOLINT(cert-err58-cpp
                 "tiff",
                 "image/tiff",
                 [](size_t length, IIReadInterface &ri,
-                   bool &match, int64_t &width, int64_t &height,
-                   std::vector<std::array<int64_t, 2>> &entrySizes) {
+                   int64_t &width, int64_t &height,
+                   std::vector<std::array<int64_t, 2>> &entrySizes) -> bool {
                     if (length < 8) {
-                        match = false;
-                        return;
+                        return false;
                     }
                     auto buffer = ri.readBuffer(0, 8);
                     if (!buffer.cmpOneOf(0, 4, {"\x49\x49\x2A\x00", "\x4D\x4D\x00\x2A"})) {
-                        match = false;
-                        return;
+                        return false;
                     }
-                    match = true;
+
                     bool needSwap = buffer[0] == 0x4D;
 
                     uint32_t offset = needSwap ? buffer.readU32BE(4) : buffer.readU32LE(4);
-                    if (length < offset + 2) return;
+                    if (length < offset + 2) {
+                        return true;
+                    }
 
                     buffer = ri.readBuffer(offset, 2);
                     uint16_t numEntry = needSwap ? buffer.readU16BE(0) : buffer.readU16LE(0);
@@ -1099,6 +1070,8 @@ static const std::vector<IIDetector> s_ii_detectors = { // NOLINT(cert-err58-cpp
                             }
                         }
                     }
+
+                    return true;
                 }
         ),
 
@@ -1110,19 +1083,15 @@ static const std::vector<IIDetector> s_ii_detectors = { // NOLINT(cert-err58-cpp
                 "webp",
                 "image/webp",
                 [](size_t length, IIReadInterface &ri,
-                   bool &match, int64_t &width, int64_t &height,
-                   std::vector<std::array<int64_t, 2>> &entrySizes) {
+                   int64_t &width, int64_t &height,
+                   std::vector<std::array<int64_t, 2>> &entrySizes) -> bool {
                     if (length < 16) {
-                        match = false;
-                        return;
+                        return false;
                     }
                     auto buffer = ri.readBuffer(0, std::min(length, (size_t) 30));
                     if (!buffer.cmp(0, 4, "RIFF") || !buffer.cmp(8, 4, "WEBP")) {
-                        match = false;
-                        return;
+                        return false;
                     }
-
-                    match = true;
 
                     std::string type = buffer.readString(12, 4);
                     if (type == "VP8 " && buffer.size() >= 30) {
@@ -1143,6 +1112,8 @@ static const std::vector<IIDetector> s_ii_detectors = { // NOLINT(cert-err58-cpp
                             // Invalid
                         }
                     }
+
+                    return true;
                 }
         ),
 
@@ -1155,29 +1126,26 @@ static const std::vector<IIDetector> s_ii_detectors = { // NOLINT(cert-err58-cpp
                 "tga",
                 "image/tga",
                 [](size_t length, IIReadInterface &ri,
-                   bool &match, int64_t &width, int64_t &height,
-                   std::vector<std::array<int64_t, 2>> &entrySizes) {
+                   int64_t &width, int64_t &height,
+                   std::vector<std::array<int64_t, 2>> &entrySizes) -> bool {
                     if (length < 18) {
-                        match = false;
-                        return;
+                        return false;
                     }
 
                     auto buffer = ri.readBuffer(length - 18, 18);
 
                     if (buffer.cmp(0, 18, "TRUEVISION-XFILE.\x00")) {
-                        match = true;
                         buffer = ri.readBuffer(0, 18);
                         width = buffer.readU16LE(12);
                         height = buffer.readU16LE(14);
-                        return;
+                        return true;
                     }
 
                     buffer = ri.readBuffer(0, 18);
 
                     uint8_t idLen = buffer.readU8(0);
                     if (length < (size_t) idLen + 18) {
-                        match = false;
-                        return;
+                        return false;
                     }
 
                     uint8_t colorMapType = buffer.readU8(1);
@@ -1203,23 +1171,21 @@ static const std::vector<IIDetector> s_ii_detectors = { // NOLINT(cert-err58-cpp
                             if (firstColorMapEntryIndex == 0
                                 && colorMapLength == 0
                                 && colorMapEntrySize == 0) {
-                                match = true;
                                 width = w;
                                 height = h;
-                                return;
+                                return true;
                             }
                         }
                     } else if (colorMapType == 1) {     // 256 entry palette
                         if (imageType == 1
                             || imageType == 9) {
-                            match = true;
                             width = w;
                             height = h;
-                            return;
+                            return true;
                         }
                     }
 
-                    match = false;
+                    return false;
                 }
         ),
 };
@@ -1257,8 +1223,7 @@ public:
     }
 
     bool tryDetector(const IIDetector &detector, size_t length, IIReadInterface &ri) {
-        bool match = false;
-        detector.process(length, ri, match, m_width, m_height, m_entrySizes);
+        bool match = detector.process(length, ri, m_width, m_height, m_entrySizes);
         if (match) {
             m_format = detector.format;
             m_ext = detector.ext;
