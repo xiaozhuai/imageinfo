@@ -6,6 +6,8 @@ The imageinfo don't get image format by file ext name, but infer by file header 
 
 As few I/O times as possible! Read as few bytes as possible!
 
+Some test image files are from [image-size](https://github.com/image-size/image-size). Many thanks to [@netroy](https://github.com/netroy).
+
 ## Supported formats
 
 * [x] bmp

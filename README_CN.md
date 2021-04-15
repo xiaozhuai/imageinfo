@@ -6,6 +6,8 @@ imageinfo 并不是通过扩展名来识别图片格式，而是通过文件头�
 
 尽可能少的I/O次数！读取尽可能少的字节数！
 
+部分测试图片文件来源于 [image-size](https://github.com/image-size/image-size) ，感谢 [@netroy](https://github.com/netroy)
+
 ## 支持格式
 
 * [x] bmp
