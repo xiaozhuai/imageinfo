@@ -8,6 +8,11 @@ As few I/O times as possible! Read as few bytes as possible!
 
 Some test image files are from [image-size](https://github.com/image-size/image-size). Many thanks to [@netroy](https://github.com/netroy).
 
+[![CI linux](https://github.com/xiaozhuai/imageinfo/workflows/linux/badge.svg)](https://github.com/xiaozhuai/imageinfo/actions?query=workflow%3Alinux)
+[![CI macos](https://github.com/xiaozhuai/imageinfo/workflows/macos/badge.svg)](https://github.com/xiaozhuai/imageinfo/actions?query=workflow%3Amacos)
+[![CI windows-x86](https://github.com/xiaozhuai/imageinfo/workflows/windows-x86/badge.svg)](https://github.com/xiaozhuai/imageinfo/actions?query=workflow%3Awindows-x86)
+[![CI windows-x64](https://github.com/xiaozhuai/imageinfo/workflows/windows-x64/badge.svg)](https://github.com/xiaozhuai/imageinfo/actions?query=workflow%3Awindows-x64)
+
 ## Supported formats
 
 * [x] avif

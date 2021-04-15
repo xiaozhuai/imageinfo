@@ -8,6 +8,11 @@ imageinfo 并不是通过扩展名来识别图片格式，而是通过文件头�
 
 部分测试图片文件来源于 [image-size](https://github.com/image-size/image-size) ，感谢 [@netroy](https://github.com/netroy)
 
+[![CI linux](https://github.com/xiaozhuai/imageinfo/workflows/linux/badge.svg)](https://github.com/xiaozhuai/imageinfo/actions?query=workflow%3Alinux)
+[![CI macos](https://github.com/xiaozhuai/imageinfo/workflows/macos/badge.svg)](https://github.com/xiaozhuai/imageinfo/actions?query=workflow%3Amacos)
+[![CI windows-x86](https://github.com/xiaozhuai/imageinfo/workflows/windows-x86/badge.svg)](https://github.com/xiaozhuai/imageinfo/actions?query=workflow%3Awindows-x86)
+[![CI windows-x64](https://github.com/xiaozhuai/imageinfo/workflows/windows-x64/badge.svg)](https://github.com/xiaozhuai/imageinfo/actions?query=workflow%3Awindows-x64)
+
 ## 支持格式
 
 * [x] avif
