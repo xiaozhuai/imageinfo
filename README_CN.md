@@ -10,6 +10,7 @@ imageinfo 并不是通过扩展名来识别图片格式，而是通过文件头�
 
 ## 支持格式
 
+* [x] avif
 * [x] bmp
 * [x] cur
 * [x] dds

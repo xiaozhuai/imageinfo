@@ -39,6 +39,7 @@
 #include <regex>
 #include <utility>
 #include <unordered_map>
+#include <unordered_set>
 #include <set>
 #include <vector>
 #include <tuple>
@@ -72,6 +73,7 @@ static inline T ii_swap_endian_(T u) {
 
 enum IIFormat {
     II_FORMAT_UNKNOWN = 0,
+    II_FORMAT_AVIF,
     II_FORMAT_BMP,
     II_FORMAT_CUR,
     II_FORMAT_DDS,
@@ -407,6 +409,100 @@ struct IIDetector {
 };
 
 static const std::vector<IIDetector> s_ii_detectors = { // NOLINT(cert-err58-cpp)
+        ///////////////////////// AVIF /////////////////////////
+        IIDetector(
+                II_FORMAT_AVIF,
+                "avif",
+                "avif",
+                "image/avif",
+                [](size_t length, IIReadInterface &ri,
+                   int64_t &width, int64_t &height,
+                   std::vector<std::array<int64_t, 2>> &entrySizes) -> bool {
+                    if (length < 4) {
+                        return false;
+                    }
+                    auto buffer = ri.readBuffer(0, 4);
+                    uint32_t ftypBoxLength = buffer.readU32BE(0);
+                    if (length < ftypBoxLength + 12) {
+                        return false;
+                    }
+                    buffer = ri.readBuffer(0, ftypBoxLength + 12);
+                    if (!buffer.cmp(4, 4, "ftyp")) {
+                        return false;
+                    }
+
+                    /**
+                     * Major Brand
+                     *
+                     * AVIF: "avif"
+                     * HEIF: "mif1", "msf1"
+                     * HEIC: "heic", "heix", "hevc", "hevx"
+                     *
+                     */
+                    if (!buffer.cmpOneOf(8, 4, {"avif", "mif1", "msf1", "heic", "heix", "hevc", "hevx"})) {
+                        return false;
+                    }
+
+                    int compatibleBrandSize = (ftypBoxLength - 16) / 4;
+                    std::unordered_set<std::string> compatibleBrands;
+                    for (int i = 0; i < compatibleBrandSize; ++i) {
+                        compatibleBrands.insert(buffer.readString(16 + i * 4, 4));
+                    }
+
+                    // same as heic, compatibleBrands contains "avif"
+                    if (compatibleBrands.find("avif") == compatibleBrands.end()) {
+                        return false;
+                    }
+
+                    if (!buffer.cmp(ftypBoxLength + 4, 4, "meta")) {
+                        return false;
+                    }
+
+                    uint32_t metaLength = buffer.readU32BE(ftypBoxLength);
+
+                    if (length < ftypBoxLength + 12 + metaLength) {
+                        return false;
+                    }
+
+                    buffer = ri.readBuffer(ftypBoxLength + 12, metaLength);
+
+                    off_t offset = 0;
+                    off_t end = metaLength;
+
+                    loop_box:
+
+                    /**
+                     * find ispe box
+                     *
+                     * meta
+                     *   - ...
+                     *   - iprp
+                     *       - ...
+                     *       - ipco
+                     *           - ...
+                     *           - ispe
+                     */
+                    while (offset < end) {
+                        // std::string boxType = buffer.readString(offset + 4, 4);
+                        uint32_t boxSize = buffer.readU32BE(offset);
+                        // std::cout << boxSize << ", " << boxType << "\n";
+                        if (buffer.cmpOneOf(offset + 4, 4, {"iprp", "ipco"})) {
+                            end = offset + boxSize;
+                            offset += 8;
+                            goto loop_box;
+                        }
+                        if (buffer.cmp(offset + 4, 4, "ispe")) {
+                            width = buffer.readU32BE(offset + 12);
+                            height = buffer.readU32BE(offset + 16);
+                            break;
+                        }
+                        offset += boxSize;
+                    }
+
+                    return true;
+                }
+        ),
+
         ///////////////////////// BMP /////////////////////////
         // https://www.fileformat.info/format/bmp/corion.htm
         IIDetector(
@@ -591,10 +687,15 @@ static const std::vector<IIDetector> s_ii_detectors = { // NOLINT(cert-err58-cpp
                 [](size_t length, IIReadInterface &ri,
                    int64_t &width, int64_t &height,
                    std::vector<std::array<int64_t, 2>> &entrySizes) -> bool {
-                    if (length < 36) {
+                    if (length < 4) {
                         return false;
                     }
-                    auto buffer = ri.readBuffer(0, 36);
+                    auto buffer = ri.readBuffer(0, 4);
+                    uint32_t ftypBoxLength = buffer.readU32BE(0);
+                    if (length < ftypBoxLength + 12) {
+                        return false;
+                    }
+                    buffer = ri.readBuffer(0, ftypBoxLength + 12);
                     if (!buffer.cmp(4, 4, "ftyp")) {
                         return false;
                     }
@@ -602,24 +703,37 @@ static const std::vector<IIDetector> s_ii_detectors = { // NOLINT(cert-err58-cpp
                     /**
                      * Major Brand
                      *
+                     * AVIF: "avif"
                      * HEIF: "mif1", "msf1"
                      * HEIC: "heic", "heix", "hevc", "hevx"
                      *
                      */
-                    if (!buffer.cmpOneOf(8, 4, {"mif1", "msf1", "heic", "heix", "hevc", "hevx"})) {
-                        return false;
-                    }
-                    if (!buffer.cmp(28, 4, "meta")) {
+                    if (!buffer.cmpOneOf(8, 4, {"avif", "mif1", "msf1", "heic", "heix", "hevc", "hevx"})) {
                         return false;
                     }
 
-                    uint32_t metaLength = buffer.readU32BE(24);
+                    int compatibleBrandSize = (ftypBoxLength - 16) / 4;
+                    std::unordered_set<std::string> compatibleBrands;
+                    for (int i = 0; i < compatibleBrandSize; ++i) {
+                        compatibleBrands.insert(buffer.readString(16 + i * 4, 4));
+                    }
 
-                    if (length < 36 + metaLength) {
+                    // compatibleBrands contains "heic"
+                    if (compatibleBrands.find("heic") == compatibleBrands.end()) {
                         return false;
                     }
 
-                    buffer = ri.readBuffer(36, metaLength);
+                    if (!buffer.cmp(ftypBoxLength + 4, 4, "meta")) {
+                        return false;
+                    }
+
+                    uint32_t metaLength = buffer.readU32BE(ftypBoxLength);
+
+                    if (length < ftypBoxLength + 12 + metaLength) {
+                        return false;
+                    }
+
+                    buffer = ri.readBuffer(ftypBoxLength + 12, metaLength);
 
                     off_t offset = 0;
                     off_t end = metaLength;

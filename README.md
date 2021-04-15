@@ -10,6 +10,7 @@ Some test image files are from [image-size](https://github.com/image-size/image-
 
 ## Supported formats
 
+* [x] avif
 * [x] bmp
 * [x] cur
 * [x] dds

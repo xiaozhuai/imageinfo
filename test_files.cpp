@@ -30,6 +30,11 @@
 
 int main() {
     {
+        ASSET_II(IMAGES_DIRECTORY "valid/avif/sample.avif", II_ERR_OK, II_FORMAT_AVIF, 123l, 456l);
+        ASSET_II(IMAGES_DIRECTORY "valid/avif/sample2.avif", II_ERR_OK, II_FORMAT_AVIF, 800l, 533l);
+    }
+
+    {
         ASSET_II(IMAGES_DIRECTORY "valid/bmp/sample.bmp", II_ERR_OK, II_FORMAT_BMP, 123l, 456l);
         ASSET_II(IMAGES_DIRECTORY "valid/bmp/sample2.bmp", II_ERR_OK, II_FORMAT_BMP, 123l, 456l);
     }
@@ -53,7 +58,7 @@ int main() {
     {
         ASSET_II(IMAGES_DIRECTORY "valid/heic/sample.heic", II_ERR_OK, II_FORMAT_HEIC, 122l, 456l);
         ASSET_II(IMAGES_DIRECTORY "valid/heic/sample2.heic", II_ERR_OK, II_FORMAT_HEIC, 1440l, 960l);
-
+        ASSET_II(IMAGES_DIRECTORY "valid/heic/sample3.heic", II_ERR_OK, II_FORMAT_HEIC, 1280l, 854l);
     }
 
     {
