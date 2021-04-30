@@ -346,7 +346,7 @@ public:
         return memcmp(data() + offset, buf, size) == 0;
     }
 
-    inline bool cmpOneOf(off_t offset, size_t size, const std::initializer_list<const void *> &bufList) {
+    inline bool cmpAnyOf(off_t offset, size_t size, const std::initializer_list<const void *> &bufList) {
         return std::any_of(bufList.begin(), bufList.end(), [this, offset, size](const void *buf) {
             return memcmp(data() + offset, buf, size) == 0;
         });
@@ -439,7 +439,7 @@ static const std::vector<IIDetector> s_ii_detectors = { // NOLINT(cert-err58-cpp
                      * HEIC: "heic", "heix", "hevc", "hevx"
                      *
                      */
-                    if (!buffer.cmpOneOf(8, 4, {"avif", "mif1", "msf1", "heic", "heix", "hevc", "hevx"})) {
+                    if (!buffer.cmpAnyOf(8, 4, {"avif", "mif1", "msf1", "heic", "heix", "hevc", "hevx"})) {
                         return false;
                     }
 
@@ -486,7 +486,7 @@ static const std::vector<IIDetector> s_ii_detectors = { // NOLINT(cert-err58-cpp
                         // std::string boxType = buffer.readString(offset + 4, 4);
                         uint32_t boxSize = buffer.readU32BE(offset);
                         // std::cout << boxSize << ", " << boxType << "\n";
-                        if (buffer.cmpOneOf(offset + 4, 4, {"iprp", "ipco"})) {
+                        if (buffer.cmpAnyOf(offset + 4, 4, {"iprp", "ipco"})) {
                             end = offset + boxSize;
                             offset += 8;
                             goto loop_box;
@@ -622,7 +622,7 @@ static const std::vector<IIDetector> s_ii_detectors = { // NOLINT(cert-err58-cpp
                         return false;
                     }
                     auto buffer = ri.readBuffer(0, 10);
-                    if (!buffer.cmpOneOf(0, 6, {"GIF87a", "GIF89a"})) {
+                    if (!buffer.cmpAnyOf(0, 6, {"GIF87a", "GIF89a"})) {
                         return false;
                     }
 
@@ -649,7 +649,7 @@ static const std::vector<IIDetector> s_ii_detectors = { // NOLINT(cert-err58-cpp
 
                     // TODO Max header size ? Or just read header line by line
                     auto buffer = ri.readBuffer(0, std::min(length, (size_t) 256));
-                    if (!buffer.cmpOneOf(0, 6, {"#?RGBE", "#?XYZE"})) {
+                    if (!buffer.cmpAnyOf(0, 6, {"#?RGBE", "#?XYZE"})) {
                         return false;
                     }
 
@@ -708,7 +708,7 @@ static const std::vector<IIDetector> s_ii_detectors = { // NOLINT(cert-err58-cpp
                      * HEIC: "heic", "heix", "hevc", "hevx"
                      *
                      */
-                    if (!buffer.cmpOneOf(8, 4, {"avif", "mif1", "msf1", "heic", "heix", "hevc", "hevx"})) {
+                    if (!buffer.cmpAnyOf(8, 4, {"avif", "mif1", "msf1", "heic", "heix", "hevc", "hevx"})) {
                         return false;
                     }
 
@@ -755,7 +755,7 @@ static const std::vector<IIDetector> s_ii_detectors = { // NOLINT(cert-err58-cpp
                         // std::string boxType = buffer.readString(offset + 4, 4);
                         uint32_t boxSize = buffer.readU32BE(offset);
                         // std::cout << boxSize << ", " << boxType << "\n";
-                        if (buffer.cmpOneOf(offset + 4, 4, {"iprp", "ipco"})) {
+                        if (buffer.cmpAnyOf(offset + 4, 4, {"iprp", "ipco"})) {
                             end = offset + boxSize;
                             offset += 8;
                             goto loop_box;
@@ -984,7 +984,7 @@ static const std::vector<IIDetector> s_ii_detectors = { // NOLINT(cert-err58-cpp
                         // 0xFFC0 is baseline standard (SOF0)
                         // 0xFFC1 is baseline optimized (SOF1)
                         // 0xFFC2 is progressive (SOF2)
-                        if (buffer.cmpOneOf(0, 2, {"\xFF\xC0", "\xFF\xC1", "\xFF\xC2"})) {
+                        if (buffer.cmpAnyOf(0, 2, {"\xFF\xC0", "\xFF\xC1", "\xFF\xC2"})) {
                             height = buffer.readU16BE(5);
                             width = buffer.readU16BE(7);
                             break;
@@ -1144,7 +1144,7 @@ static const std::vector<IIDetector> s_ii_detectors = { // NOLINT(cert-err58-cpp
                         return false;
                     }
                     auto buffer = ri.readBuffer(0, 8);
-                    if (!buffer.cmpOneOf(0, 4, {"\x49\x49\x2A\x00", "\x4D\x4D\x00\x2A"})) {
+                    if (!buffer.cmpAnyOf(0, 4, {"\x49\x49\x2A\x00", "\x4D\x4D\x00\x2A"})) {
                         return false;
                     }
 
