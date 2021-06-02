@@ -59,9 +59,11 @@ static_assert(sizeof(int32_t) == 4, "sizeof(int32_t) != 4");
 static_assert(sizeof(uint64_t) == 8, "sizeof(uint64_t) != 8");
 static_assert(sizeof(int64_t) == 8, "sizeof(int64_t) != 8");
 
+#ifdef __clang__
 #pragma clang diagnostic push
 #pragma ide diagnostic ignored "OCUnusedStructInspection"
 #pragma ide diagnostic ignored "OCUnusedGlobalDeclarationInspection"
+#endif
 
 template<typename T>
 static inline T ii_swap_endian_(T u) {
@@ -1395,6 +1397,8 @@ private:
     std::vector<std::array<int64_t, 2>> m_entrySizes;
 };
 
+#ifdef __clang__
 #pragma clang diagnostic pop
+#endif
 
 #endif //IMAGEINFO_IMAGEINFO_H
