@@ -59,6 +59,10 @@ static_assert(sizeof(int32_t) == 4, "sizeof(int32_t) != 4");
 static_assert(sizeof(uint64_t) == 8, "sizeof(uint64_t) != 8");
 static_assert(sizeof(int64_t) == 8, "sizeof(int64_t) != 8");
 
+#pragma clang diagnostic push
+#pragma ide diagnostic ignored "OCUnusedStructInspection"
+#pragma ide diagnostic ignored "OCUnusedGlobalDeclarationInspection"
+
 template<typename T>
 static inline T ii_swap_endian_(T u) {
     union {
@@ -251,87 +255,65 @@ public:
 
 public:
     inline uint8_t readU8(off_t offset) {
-        uint8_t val;
-        readInt(offset, val, false);
-        return val;
+        return readInt<uint8_t>(offset, false);
     }
 
     inline int8_t readS8(off_t offset) {
-        int8_t val;
-        readInt(offset, val, false);
-        return val;
+        return readInt<int8_t>(offset, false);
     }
 
     inline uint16_t readU16LE(off_t offset) {
-        uint16_t val;
-        readInt(offset, val, false);
-        return val;
+        return readInt<uint16_t>(offset, false);
     }
 
     inline uint16_t readU16BE(off_t offset) {
-        uint16_t val;
-        readInt(offset, val, true);
-        return val;
+        return readInt<uint16_t>(offset, true);
     }
 
     inline int16_t readS16LE(off_t offset) {
-        int16_t val;
-        readInt(offset, val, false);
-        return val;
+        return readInt<int16_t>(offset, false);
     }
 
     inline int16_t readS16BE(off_t offset) {
-        int16_t val;
-        readInt(offset, val, true);
-        return val;
+        return readInt<int16_t>(offset, true);
     }
 
     inline uint32_t readU32LE(off_t offset) {
-        uint32_t val;
-        readInt(offset, val, false);
-        return val;
+        return readInt<uint32_t>(offset, false);
     }
 
     inline uint32_t readU32BE(off_t offset) {
-        uint32_t val;
-        readInt(offset, val, true);
-        return val;
+        return readInt<uint32_t>(offset, true);
     }
 
     inline int32_t readS32LE(off_t offset) {
-        int32_t val;
-        readInt(offset, val, false);
-        return val;
+        return readInt<int32_t>(offset, false);
     }
 
     inline int32_t readS32BE(off_t offset) {
-        int32_t val;
-        readInt(offset, val, true);
-        return val;
+        return readInt<int32_t>(offset, true);
     }
 
     inline uint64_t readU64LE(off_t offset) {
-        uint64_t val;
-        readInt(offset, val, false);
-        return val;
+        return readInt<uint64_t>(offset, false);
     }
 
     inline uint64_t readU64BE(off_t offset) {
-        uint64_t val;
-        readInt(offset, val, true);
-        return val;
+        return readInt<uint64_t>(offset, true);
     }
 
     inline int64_t readS64LE(off_t offset) {
-        int64_t val;
-        readInt(offset, val, false);
-        return val;
+        return readInt<int64_t>(offset, false);
     }
 
     inline int64_t readS64BE(off_t offset) {
-        int64_t val;
-        readInt(offset, val, true);
-        return val;
+        return readInt<int64_t>(offset, true);
+    }
+
+    template<typename T>
+    inline T readInt(off_t offset, bool swapEndian = false) {
+        T val = *((T *) (data() + offset));
+        return swapEndian ? ii_swap_endian_<T>(val) : val;
     }
 
     inline std::string readString(off_t offset, size_t size) {
@@ -350,15 +332,6 @@ public:
         return std::any_of(bufList.begin(), bufList.end(), [this, offset, size](const void *buf) {
             return memcmp(data() + offset, buf, size) == 0;
         });
-    }
-
-private:
-    template<typename T>
-    inline void readInt(off_t offset, T &val, bool swapEndian = false) {
-        val = *((T *) (data() + offset));
-        if (swapEndian) {
-            val = ii_swap_endian_<T>(val);
-        }
     }
 
 private:
@@ -1148,15 +1121,16 @@ static const std::vector<IIDetector> s_ii_detectors = { // NOLINT(cert-err58-cpp
                         return false;
                     }
 
-                    bool needSwap = buffer[0] == 0x4D;
+                    bool swapEndian = buffer[0] == 0x4D;
 
-                    uint32_t offset = needSwap ? buffer.readU32BE(4) : buffer.readU32LE(4);
+                    auto offset = buffer.readInt<uint32_t>(4, swapEndian);
                     if (length < offset + 2) {
                         return true;
                     }
 
                     buffer = ri.readBuffer(offset, 2);
-                    uint16_t numEntry = needSwap ? buffer.readU16BE(0) : buffer.readU16LE(0);
+
+                    auto numEntry = buffer.readInt<uint16_t>(0, swapEndian);
                     offset += 2;
 
                     for (uint16_t i = 0;
@@ -1167,20 +1141,20 @@ static const std::vector<IIDetector> s_ii_detectors = { // NOLINT(cert-err58-cpp
 
                         buffer = ri.readBuffer(offset, 12);
 
-                        uint16_t tag = needSwap ? buffer.readU16BE(0) : buffer.readU16LE(0);
-                        uint16_t type = needSwap ? buffer.readU16BE(2) : buffer.readU16LE(2);
+                        auto tag = buffer.readInt<uint16_t>(0, swapEndian);
+                        auto type = buffer.readInt<uint16_t>(2, swapEndian);
 
                         if (tag == 256) {           // Found ImageWidth entry
                             if (type == 3) {
-                                width = needSwap ? buffer.readU16BE(8) : buffer.readU16LE(8);
+                                width = buffer.readInt<uint16_t>(8, swapEndian);
                             } else if (type == 4) {
-                                width = needSwap ? buffer.readU32BE(8) : buffer.readU32LE(8);
+                                width = buffer.readInt<uint32_t>(8, swapEndian);
                             }
                         } else if (tag == 257) {    // Found ImageHeight entry
                             if (type == 3) {
-                                height = needSwap ? buffer.readU16BE(8) : buffer.readU16LE(8);
+                                height = buffer.readInt<uint16_t>(8, swapEndian);
                             } else if (type == 4) {
-                                height = needSwap ? buffer.readU32BE(8) : buffer.readU32LE(8);
+                                height = buffer.readInt<uint32_t>(8, swapEndian);
                             }
                         }
                     }
@@ -1421,5 +1395,6 @@ private:
     std::vector<std::array<int64_t, 2>> m_entrySizes;
 };
 
+#pragma clang diagnostic pop
 
 #endif //IMAGEINFO_IMAGEINFO_H
