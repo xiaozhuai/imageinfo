@@ -171,7 +171,7 @@ public:
 
     inline void read(void *buf, off_t offset, size_t size) {
         m_file.seekg(offset, std::ios::beg);
-        m_file.read((char *) buf, size);
+        m_file.read((char *) buf, (std::streamsize) size);
     }
 
 private:
@@ -195,7 +195,7 @@ public:
 
     inline void read(void *buf, off_t offset, size_t size) {
         m_file.seekg(offset, std::ios::beg);
-        m_file.read((char *) buf, size);
+        m_file.read((char *) buf, (std::streamsize) size);
     }
 
 private:
@@ -416,9 +416,9 @@ static const std::vector<IIDetector> s_ii_detectors = { // NOLINT(cert-err58-cpp
                         return false;
                     }
 
-                    int compatibleBrandSize = (ftypBoxLength - 16) / 4;
+                    uint32_t compatibleBrandSize = (ftypBoxLength - 16) / 4;
                     std::unordered_set<std::string> compatibleBrands;
-                    for (int i = 0; i < compatibleBrandSize; ++i) {
+                    for (uint32_t i = 0; i < compatibleBrandSize; ++i) {
                         compatibleBrands.insert(buffer.readString(16 + i * 4, 4));
                     }
 
@@ -522,8 +522,8 @@ static const std::vector<IIDetector> s_ii_detectors = { // NOLINT(cert-err58-cpp
                     if (entryCount == 0) {
                         return false;
                     }
-                    const size_t ENTRY_SIZE = 16;
-                    size_t entryTotalSize = entryCount * ENTRY_SIZE;
+                    const int ENTRY_SIZE = 16;
+                    off_t entryTotalSize = entryCount * ENTRY_SIZE;
 
                     off_t offset = 6;
                     if (length < offset + entryTotalSize) {
@@ -621,7 +621,7 @@ static const std::vector<IIDetector> s_ii_detectors = { // NOLINT(cert-err58-cpp
                     }
 
                     // TODO Max header size ? Or just read header line by line
-                    auto buffer = ri.readBuffer(0, std::min(length, (size_t) 256));
+                    auto buffer = ri.readBuffer(0, std::min<size_t>(length, 256));
                     if (!buffer.cmpAnyOf(0, 6, {"#?RGBE", "#?XYZE"})) {
                         return false;
                     }
@@ -685,9 +685,9 @@ static const std::vector<IIDetector> s_ii_detectors = { // NOLINT(cert-err58-cpp
                         return false;
                     }
 
-                    int compatibleBrandSize = (ftypBoxLength - 16) / 4;
+                    uint32_t compatibleBrandSize = (ftypBoxLength - 16) / 4;
                     std::unordered_set<std::string> compatibleBrands;
-                    for (int i = 0; i < compatibleBrandSize; ++i) {
+                    for (uint32_t i = 0; i < compatibleBrandSize; ++i) {
                         compatibleBrands.insert(buffer.readString(16 + i * 4, 4));
                     }
 
@@ -843,8 +843,8 @@ static const std::vector<IIDetector> s_ii_detectors = { // NOLINT(cert-err58-cpp
                     if (entryCount == 0) {
                         return false;
                     }
-                    const size_t ENTRY_SIZE = 16;
-                    size_t entryTotalSize = entryCount * ENTRY_SIZE;
+                    const int ENTRY_SIZE = 16;
+                    off_t entryTotalSize = entryCount * ENTRY_SIZE;
 
                     off_t offset = 6;
                     if (length < offset + entryTotalSize) {
@@ -949,7 +949,7 @@ static const std::vector<IIDetector> s_ii_detectors = { // NOLINT(cert-err58-cpp
                         return false;
                     }
 
-                    size_t offset = 2;
+                    off_t offset = 2;
                     while (offset + 9 <= length) {
                         buffer = ri.readBuffer(offset, 9);
                         uint16_t sectionSize = buffer.readU16BE(2);
@@ -1059,7 +1059,7 @@ static const std::vector<IIDetector> s_ii_detectors = { // NOLINT(cert-err58-cpp
                         return false;
                     }
 
-                    auto buffer = ri.readBuffer(0, std::min(length, (size_t) 40));
+                    auto buffer = ri.readBuffer(0, std::min<size_t>(length, 40));
                     if (!buffer.cmp(0, 4, "\x89PNG")) {
                         return false;
                     }
@@ -1176,7 +1176,7 @@ static const std::vector<IIDetector> s_ii_detectors = { // NOLINT(cert-err58-cpp
                     if (length < 16) {
                         return false;
                     }
-                    auto buffer = ri.readBuffer(0, std::min(length, (size_t) 30));
+                    auto buffer = ri.readBuffer(0, std::min<size_t>(length, 30));
                     if (!buffer.cmp(0, 4, "RIFF") || !buffer.cmp(8, 4, "WEBP")) {
                         return false;
                     }
@@ -1220,7 +1220,7 @@ static const std::vector<IIDetector> s_ii_detectors = { // NOLINT(cert-err58-cpp
                         return false;
                     }
 
-                    auto buffer = ri.readBuffer(length - 18, 18);
+                    auto buffer = ri.readBuffer((off_t) (length - 18), 18);
 
                     if (buffer.cmp(0, 18, "TRUEVISION-XFILE.\x00")) {
                         buffer = ri.readBuffer(0, 18);
