@@ -3,7 +3,7 @@
 
 int main(int argc, char **argv) {
     if (argc < 2) {
-        printf("Usage: %s <file>\n", argv[0]);
+        std::cout << "Usage: " << argv[0] << " <file>\n";
         return 1;
     }
 
