@@ -361,6 +361,10 @@ public:
         return buffer;
     }
 
+    inline size_t length() const {
+        return m_length;
+    }
+
 private:
     inline void read(void *buf, off_t offset, size_t size) {
         m_readFunc(buf, offset, size);
@@ -1287,21 +1291,15 @@ static const std::vector<IIDetector> s_ii_detectors = { // NOLINT(cert-err58-cpp
         ),
 };
 
-template<typename ReaderType, typename InputType>
 class ImageInfo {
 public:
     ImageInfo() = delete;
 
-    explicit ImageInfo(InputType file, IIFormat likelyFormat = II_FORMAT_UNKNOWN, bool mustBe = false) {
-        ReaderType fileReader(file);
-        size_t length = fileReader.size();
-        IIReadFunc read = [&](void *buf, off_t offset, size_t size) { fileReader.read(buf, offset, size); };
-        IIReadInterface ri(read, length);
-
+    explicit ImageInfo(IIReadInterface &ri, IIFormat likelyFormat = II_FORMAT_UNKNOWN, bool mustBe = false) {
         if (likelyFormat != II_FORMAT_UNKNOWN) {
             for (const auto &detector : s_ii_detectors) {
                 if (detector.format == likelyFormat) {
-                    if (tryDetector(detector, length, ri)) return;
+                    if (tryDetector(detector, ri)) return;
                     break;
                 }
             }
@@ -1313,14 +1311,14 @@ public:
 
         for (const auto &detector : s_ii_detectors) {
             if (detector.format == likelyFormat) continue;
-            if (tryDetector(detector, length, ri)) return;
+            if (tryDetector(detector, ri)) return;
         }
 
         m_err = II_ERR_UNRECOGNIZED_FORMAT;
     }
 
-    bool tryDetector(const IIDetector &detector, size_t length, IIReadInterface &ri) {
-        bool match = detector.process(length, ri, m_width, m_height, m_entrySizes);
+    bool tryDetector(const IIDetector &detector, IIReadInterface &ri) {
+        bool match = detector.process(ri.length(), ri, m_width, m_height, m_entrySizes);
         if (match) {
             m_format = detector.format;
             m_ext = detector.ext;
@@ -1369,7 +1367,7 @@ public:
         return {m_width, m_height};
     }
 
-    inline const std::vector<std::array<int64_t, 2>> &getEntrySizes() const {
+    inline std::vector<std::array<int64_t, 2>> getEntrySizes() const {
         if (m_entrySizes.empty()) {
             return {getSize()};
         }
@@ -1405,9 +1403,13 @@ private:
 };
 
 template<typename ReaderType, typename InputType>
-static inline ImageInfo<ReaderType, InputType>
-getImageInfo(InputType input, IIFormat likelyFormat = II_FORMAT_UNKNOWN, bool mustBe = false) {
-    return ImageInfo<ReaderType, InputType>(input, likelyFormat, mustBe);
+static inline ImageInfo
+getImageInfo(InputType file, IIFormat likelyFormat = II_FORMAT_UNKNOWN, bool mustBe = false) {
+    ReaderType fileReader(file);
+    size_t length = fileReader.size();
+    IIReadFunc read = [&](void *buf, off_t offset, size_t size) { fileReader.read(buf, offset, size); };
+    IIReadInterface ri(read, length);
+    return ImageInfo(ri, likelyFormat, mustBe);
 }
 
 #ifdef __clang__
