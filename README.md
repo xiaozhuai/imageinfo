@@ -60,7 +60,7 @@ cmake --build build -- check
 ### Simplest Demo
 
 ```cpp
-ImageInfo<const std::string &, IIFilePathReader> imageInfo("images/valid/jpg/sample.jpg");
+auto imageInfo = getImageInfo<IIFilePathReader>("images/valid/jpg/sample.jpg");
 std::cout << "File: " << file << "\n";
 std::cout << "  - Error    : " << imageInfo.getErrorMsg() << "\n";
 std::cout << "  - Width    : " << imageInfo.getWidth() << "\n";
@@ -77,13 +77,13 @@ and there are some builtin reader `IIFileReader`, `IIFileStreamReader`, `IIRawDa
 
 ```cpp
 FILE *file = fopen("images/valid/jpg/sample.jpg", "rb");
-ImageInfo<FILE *, IIFileReader> imageInfo(file);
+auto imageInfo = getImageInfo<IIFileReader>(file);
 fclose(file);
 ```
 
 ```cpp
 std::ifstream file("images/valid/jpg/sample.jpg", std::ios::in);
-ImageInfo<std::ifstream &, IIFileStreamReader> imageInfo(file);
+auto imageInfo = getImageInfo<IIFileStreamReader>(file);
 file.close();
 ```
 
@@ -91,13 +91,13 @@ file.close();
 // Suppose we already got data and size
 // void *data;
 // size_t size;
-ImageInfo<IIRawData, IIRawDataReader> imageInfo(IIRawData(data, size));
+auto imageInfo = getImageInfo<IIRawDataReader>(IIRawData(data, size));
 ```
 
 If you known the file is likely a JPEG, you can provide `likely format` parameter to improve performance;
 
 ```cpp
-ImageInfo<const std::string &, IIFilePathReader> imageInfo("images/valid/jpg/sample.jpg", II_FORMAT_JPEG);
+auto imageInfo = getImageInfo<IIFilePathReader>("images/valid/jpg/sample.jpg", II_FORMAT_JPEG);
 ```
 
 ### Custom Reader
@@ -158,7 +158,7 @@ private:
 // AAssetManager *manager;
 // Open with AASSET_MODE_RANDOM mode to seek forward and backward
 AAsset *file = AAssetManager_open(manager, "test.png", AASSET_MODE_RANDOM);
-ImageInfo<AAsset *, IIAndroidAssetFileReader> imageInfo(file);
+auto imageInfo = getImageInfo<IIAndroidAssetFileReader>(file);
 AAsset_close(file);
 ```
 

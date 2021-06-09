@@ -6,7 +6,7 @@
 #include "imageinfo.hpp"
 
 #define ASSET_II(file, error, format, width, height) do {                                                       \
-    ImageInfo<const std::string &, IIFilePathReader> imageInfo(file);                                           \
+    auto imageInfo = getImageInfo<IIFilePathReader>(file);                                                      \
     if (imageInfo.getErrorCode() != (error)) {                                                                  \
         fprintf(stderr, "Error ASSET_II, file: %s, line: %d, error != %s\n", file, __LINE__, #error);           \
         exit(1);                                                                                                \

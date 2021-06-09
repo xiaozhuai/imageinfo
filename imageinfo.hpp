@@ -45,6 +45,7 @@
 #include <tuple>
 #include <array>
 #include <cstdio>
+#include <cassert>
 
 #ifdef ANDROID
 #include <android/asset_manager.h>
@@ -64,18 +65,6 @@ static_assert(sizeof(int64_t) == 8, "sizeof(int64_t) != 8");
 #pragma ide diagnostic ignored "OCUnusedStructInspection"
 #pragma ide diagnostic ignored "OCUnusedGlobalDeclarationInspection"
 #endif
-
-template<typename T>
-static inline T ii_swap_endian_(T u) {
-    union {
-        T u;
-        uint8_t u8[sizeof(T)];
-    } source{}, dest{};
-    source.u = u;
-    for (size_t k = 0; k < sizeof(T); k++)
-        dest.u8[k] = source.u8[sizeof(T) - k - 1];
-    return dest.u;
-}
 
 enum IIFormat {
     II_FORMAT_UNKNOWN = 0,
@@ -315,7 +304,7 @@ public:
     template<typename T>
     inline T readInt(off_t offset, bool swapEndian = false) {
         T val = *((T *) (data() + offset));
-        return swapEndian ? ii_swap_endian_<T>(val) : val;
+        return swapEndian ? swapE<T>(val) : val;
     }
 
     inline std::string readString(off_t offset, size_t size) {
@@ -337,6 +326,19 @@ public:
     }
 
 private:
+    template<typename T>
+    static T swapE(T u) {
+        union {
+            T u;
+            uint8_t u8[sizeof(T)];
+        } source{}, dest{};
+        source.u = u;
+        for (size_t k = 0; k < sizeof(T); k++)
+            dest.u8[k] = source.u8[sizeof(T) - k - 1];
+        return dest.u;
+    }
+
+private:
     std::shared_ptr<uint8_t> m_data = nullptr;
     size_t m_size = 0;
 };
@@ -347,9 +349,13 @@ class IIReadInterface {
 public:
     IIReadInterface() = delete;
 
-    explicit IIReadInterface(IIReadFunc &readFunc) : m_readFunc(readFunc) {}
+    IIReadInterface(IIReadFunc &readFunc, size_t length)
+            : m_readFunc(readFunc),
+              m_length(length) {}
 
     inline IIBuffer readBuffer(off_t offset, size_t size) {
+        assert(offset >= 0);
+        assert(offset + size <= m_length);
         IIBuffer buffer(size);
         read(buffer.data(), offset, size);
         return buffer;
@@ -362,6 +368,7 @@ private:
 
 private:
     IIReadFunc &m_readFunc;
+    size_t m_length = 0;
 };
 
 typedef std::function<bool(size_t length, IIReadInterface &ri,
@@ -1280,7 +1287,7 @@ static const std::vector<IIDetector> s_ii_detectors = { // NOLINT(cert-err58-cpp
         ),
 };
 
-template<typename InputType, typename ReaderType>
+template<typename ReaderType, typename InputType>
 class ImageInfo {
 public:
     ImageInfo() = delete;
@@ -1289,7 +1296,7 @@ public:
         ReaderType fileReader(file);
         size_t length = fileReader.size();
         IIReadFunc read = [&](void *buf, off_t offset, size_t size) { fileReader.read(buf, offset, size); };
-        IIReadInterface ri(read);
+        IIReadInterface ri(read, length);
 
         if (likelyFormat != II_FORMAT_UNKNOWN) {
             for (const auto &detector : s_ii_detectors) {
@@ -1396,6 +1403,12 @@ private:
     IIErrorCode m_err = II_ERR_OK;
     std::vector<std::array<int64_t, 2>> m_entrySizes;
 };
+
+template<typename ReaderType, typename InputType>
+static inline ImageInfo<ReaderType, InputType>
+getImageInfo(InputType input, IIFormat likelyFormat = II_FORMAT_UNKNOWN, bool mustBe = false) {
+    return ImageInfo<ReaderType, InputType>(input, likelyFormat, mustBe);
+}
 
 #ifdef __clang__
 #pragma clang diagnostic pop

@@ -8,7 +8,7 @@ int main(int argc, char **argv) {
     }
 
     const char *file = argv[1];
-    ImageInfo<const char *, IIFilePathReader> imageInfo(file);
+    auto imageInfo = getImageInfo<IIFilePathReader>(file);
 
     std::cout << "File: " << file << "\n";
     std::cout << "  - Error    : " << imageInfo.getErrorMsg() << "\n";
