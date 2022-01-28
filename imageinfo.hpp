@@ -1231,6 +1231,9 @@ static const std::vector<IIDetector> s_ii_detectors = { // NOLINT(cert-err58-cpp
                     auto buffer = ri.readBuffer((off_t) (length - 18), 18);
 
                     if (buffer.cmp(0, 18, "TRUEVISION-XFILE.\x00")) {
+                        if (length < 18 + 16) {
+                            return false;
+                        }
                         buffer = ri.readBuffer(0, 18);
                         width = buffer.readU16LE(12);
                         height = buffer.readU16LE(14);
