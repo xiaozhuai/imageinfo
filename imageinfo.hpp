@@ -455,8 +455,6 @@ static const std::vector<IIDetector> s_ii_detectors = { // NOLINT(cert-err58-cpp
                     off_t offset = 0;
                     off_t end = metaLength;
 
-                    loop_box:
-
                     /**
                      * find ispe box
                      *
@@ -475,14 +473,13 @@ static const std::vector<IIDetector> s_ii_detectors = { // NOLINT(cert-err58-cpp
                         if (buffer.cmpAnyOf(offset + 4, 4, {"iprp", "ipco"})) {
                             end = offset + boxSize;
                             offset += 8;
-                            goto loop_box;
-                        }
-                        if (buffer.cmp(offset + 4, 4, "ispe")) {
+                        } else if (buffer.cmp(offset + 4, 4, "ispe")) {
                             width = buffer.readU32BE(offset + 12);
                             height = buffer.readU32BE(offset + 16);
                             break;
+                        } else {
+                            offset += boxSize;
                         }
-                        offset += boxSize;
                     }
 
                     return true;
@@ -724,7 +721,6 @@ static const std::vector<IIDetector> s_ii_detectors = { // NOLINT(cert-err58-cpp
                     off_t offset = 0;
                     off_t end = metaLength;
 
-                    loop_box:
 
                     /**
                      * find ispe box
@@ -744,14 +740,13 @@ static const std::vector<IIDetector> s_ii_detectors = { // NOLINT(cert-err58-cpp
                         if (buffer.cmpAnyOf(offset + 4, 4, {"iprp", "ipco"})) {
                             end = offset + boxSize;
                             offset += 8;
-                            goto loop_box;
-                        }
-                        if (buffer.cmp(offset + 4, 4, "ispe")) {
+                        } else if (buffer.cmp(offset + 4, 4, "ispe")) {
                             width = buffer.readU32BE(offset + 12);
                             height = buffer.readU32BE(offset + 16);
                             break;
+                        } else {
+                            offset += boxSize;
                         }
-                        offset += boxSize;
                     }
 
                     return true;
