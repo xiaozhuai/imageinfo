@@ -8,6 +8,8 @@ As few I/O times as possible! Read as few bytes as possible!
 
 Some test image files are from [image-size](https://github.com/image-size/image-size). Many thanks to [@netroy](https://github.com/netroy).
 
+Rust version: [imageinfo-rs](https://github.com/xiaozhuai/imageinfo-rs)
+
 [![linux](https://github.com/xiaozhuai/imageinfo/actions/workflows/linux.yml/badge.svg)](https://github.com/xiaozhuai/imageinfo/actions/workflows/linux.yml)
 [![macos](https://github.com/xiaozhuai/imageinfo/actions/workflows/macos.yml/badge.svg)](https://github.com/xiaozhuai/imageinfo/actions/workflows/macos.yml)
 [![windows-x64](https://github.com/xiaozhuai/imageinfo/actions/workflows/windows-x64.yml/badge.svg)](https://github.com/xiaozhuai/imageinfo/actions/workflows/windows-x64.yml)
