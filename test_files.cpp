@@ -108,6 +108,10 @@ int main() {
     }
 
     {
+        ASSET_II(IMAGES_DIRECTORY "valid/qoi/sample.qoi", II_ERR_OK, II_FORMAT_QOI, 123l, 456l);
+    }
+
+    {
         ASSET_II(IMAGES_DIRECTORY "valid/tga/sample.tga", II_ERR_OK, II_FORMAT_TGA, 123l, 456l);
     }
 

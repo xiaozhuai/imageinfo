@@ -83,6 +83,7 @@ enum IIFormat {
     II_FORMAT_KTX,
     II_FORMAT_PNG,
     II_FORMAT_PSD,
+    II_FORMAT_QOI,
     II_FORMAT_TGA,
     II_FORMAT_TIFF,
     II_FORMAT_WEBP,
@@ -1107,6 +1108,29 @@ static const std::vector<IIDetector> s_ii_detectors = { // NOLINT(cert-err58-cpp
                     height = buffer.readU32BE(14);
                     width = buffer.readU32BE(18);
 
+                    return true;
+                }
+        ),
+
+        ///////////////////////// QOI /////////////////////////
+        IIDetector(
+                II_FORMAT_QOI,
+                "qoi",
+                "qoi",
+                "image/qoi",
+                [](size_t length, IIReadInterface &ri,
+                   int64_t &width, int64_t &height,
+                   std::vector<std::array<int64_t, 2>> &entrySizes) -> bool {
+                    if (length < 12) {
+                        return false;
+                    }
+                    auto buffer = ri.readBuffer(0, 12);
+                    if (!buffer.cmp(0, 4, "qoif")) {
+                        return false;
+                    }
+
+                    width = buffer.readU32BE(4);
+                    height = buffer.readU32BE(8);
                     return true;
                 }
         ),

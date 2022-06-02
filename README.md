@@ -32,6 +32,7 @@ Rust version: [imageinfo-rs](https://github.com/xiaozhuai/imageinfo-rs)
 * [x] ktx
 * [x] png
 * [x] psd
+* [x] qoi
 * [ ] svg
 * [x] tga
 * [x] tiff (tif)
