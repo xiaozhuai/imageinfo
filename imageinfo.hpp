@@ -631,32 +631,30 @@ static const std::vector<IIDetector> s_ii_detectors = { // NOLINT(cert-err58-cpp
                         return false;
                     }
 
-                    // TODO Max header size ? Or just read header line by line
-                    auto buffer = ri.readBuffer(0, std::min<size_t>(length, 256));
+                    auto buffer = ri.readBuffer(0, 6);
                     if (!buffer.cmpAnyOf(0, 6, {"#?RGBE", "#?XYZE"})) {
                         return false;
                     }
 
-                    auto header = buffer.toString();
-                    std::smatch results;
-
-                    static const std::regex XPattern(R"(\s(\-|\+)X\s(\d+)\s)");
-                    static const std::regex YPattern(R"(\s(\-|\+)Y\s(\d+)\s)");
-
-                    std::string widthStr;
-                    std::string heightStr;
-
-                    std::regex_search(header, results, XPattern);
-                    if (results.size() >= 3) widthStr = results.str(2);
-                    std::regex_search(header, results, YPattern);
-                    if (results.size() >= 3) heightStr = results.str(2);
-
-                    if (!widthStr.empty() && !heightStr.empty()) {
-                        width = std::stol(widthStr);
-                        height = std::stol(heightStr);
+                    int read = 6;
+                    const size_t piece = 64;
+                    std::string header;
+                    static const std::regex XPattern(R"(\s[+-]X\s(\d+)\s)");
+                    static const std::regex YPattern(R"(\s[+-]Y\s(\d+)\s)");
+                    while (read < length) {
+                        header += ri.readBuffer(read, std::min<size_t>(length - read, piece)).toString();
+                        read += piece;
+                        std::smatch xResults;
+                        std::smatch yResults;
+                        std::regex_search(header, xResults, XPattern);
+                        std::regex_search(header, yResults, YPattern);
+                        if (xResults.size() >= 2 && yResults.size() >= 2) {
+                            width = std::stol(xResults.str(1));
+                            height = std::stol(yResults.str(1));
+                            return true;
+                        }
                     }
-
-                    return true;
+                    return false;
                 }
         ),
 
