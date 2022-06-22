@@ -1,23 +1,30 @@
-#include <iostream>
+#include <cstdio>
 #include "imageinfo.hpp"
 
 int main(int argc, char **argv) {
     if (argc < 2) {
-        std::cout << "Usage: " << argv[0] << " <file>\n";
+        printf("Usage: %s <file>...\n", argv[0]);
         return 1;
     }
 
-    const char *file = argv[1];
-    auto imageInfo = getImageInfo<IIFilePathReader>(file);
+    for (int i = 1; i < argc; ++i) {
+        const char *file = argv[i];
+        auto info = getImageInfo<IIFilePathReader>(file);
+        printf("File: %s\n", file);
+        if (info.getErrorCode() != II_ERR_OK) {
+            printf("  - Error    : %s\n", info.getErrorMsg());
+        } else {
+            printf("  - Format   : %d\n", info.getFormat());
+            printf("  - Ext      : %s\n", info.getExt());
+            printf("  - Full Ext : %s\n", info.getFullExt());
+            printf("  - Size     : {width: %lld, height: %lld}\n", info.getWidth(), info.getHeight());
+            printf("  - Mimetype : %s\n", info.getMimetype());
+            printf("  - Entries  :\n");
+            for(const auto &entrySize : info.getEntrySizes()) {
+                printf("    - {width: %lld, height: %lld}\n", entrySize[0], entrySize[1]);
+            }
+        }
+    }
 
-    std::cout << "File: " << file << "\n";
-    std::cout << "  - Error    : " << imageInfo.getErrorMsg() << "\n";
-    std::cout << "  - Width    : " << imageInfo.getWidth() << "\n";
-    std::cout << "  - Height   : " << imageInfo.getHeight() << "\n";
-    std::cout << "  - Format   : " << imageInfo.getFormat() << "\n";
-    std::cout << "  - Ext      : " << imageInfo.getExt() << "\n";
-    std::cout << "  - Full Ext : " << imageInfo.getFullExt() << "\n";
-    std::cout << "  - Mimetype : " << imageInfo.getMimetype() << "\n\n";
-
-    return imageInfo.getErrorCode();
+    return 0;
 }

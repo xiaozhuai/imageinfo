@@ -33,7 +33,6 @@
 
 #include <functional>
 #include <algorithm>
-#include <iostream>
 #include <fstream>
 #include <string>
 #include <regex>
@@ -92,7 +91,6 @@ enum IIFormat {
 enum IIErrorCode {
     II_ERR_OK = 0,
     II_ERR_UNRECOGNIZED_FORMAT,
-    II_ERR_DECODE_SIZE_FAILED,
 };
 
 #ifdef ANDROID
@@ -468,22 +466,20 @@ static const std::vector<IIDetector> s_ii_detectors = { // NOLINT(cert-err58-cpp
                      *           - ispe
                      */
                     while (offset < end) {
-                        // std::string boxType = buffer.readString(offset + 4, 4);
                         uint32_t boxSize = buffer.readU32BE(offset);
-                        // std::cout << boxSize << ", " << boxType << "\n";
                         if (buffer.cmpAnyOf(offset + 4, 4, {"iprp", "ipco"})) {
                             end = offset + boxSize;
                             offset += 8;
                         } else if (buffer.cmp(offset + 4, 4, "ispe")) {
                             width = buffer.readU32BE(offset + 12);
                             height = buffer.readU32BE(offset + 16);
-                            break;
+                            return true;
                         } else {
                             offset += boxSize;
                         }
                     }
 
-                    return true;
+                    return false;
                 }
         ),
 
@@ -742,13 +738,13 @@ static const std::vector<IIDetector> s_ii_detectors = { // NOLINT(cert-err58-cpp
                         } else if (buffer.cmp(offset + 4, 4, "ispe")) {
                             width = buffer.readU32BE(offset + 12);
                             height = buffer.readU32BE(offset + 16);
-                            break;
+                            return true;
                         } else {
                             offset += boxSize;
                         }
                     }
 
-                    return true;
+                    return false;
                 }
         ),
 
@@ -927,14 +923,16 @@ static const std::vector<IIDetector> s_ii_detectors = { // NOLINT(cert-err58-cpp
                             if (buffer.cmp(12, 4, "ihdr")) {
                                 height = buffer.readU32BE(16);
                                 width = buffer.readU32BE(20);
+                                return true;
+                            } else {
+                                return false;
                             }
-                            break;
                         }
                         uint32_t boxLength = buffer.readU32BE(0);
                         offset += boxLength;
                     }
 
-                    return true;
+                    return false;
                 }
         ),
 
@@ -967,12 +965,12 @@ static const std::vector<IIDetector> s_ii_detectors = { // NOLINT(cert-err58-cpp
                         if (buffer.cmpAnyOf(0, 2, {"\xFF\xC0", "\xFF\xC1", "\xFF\xC2"})) {
                             height = buffer.readU16BE(5);
                             width = buffer.readU16BE(7);
-                            break;
+                            return true;
                         }
                         offset += sectionSize + 2;
                     }
 
-                    return true;
+                    return false;
                 }
         ),
 
@@ -1017,14 +1015,16 @@ static const std::vector<IIDetector> s_ii_detectors = { // NOLINT(cert-err58-cpp
                             if (buffer.cmp(12, 4, "ihdr")) {
                                 height = buffer.readU32BE(16);
                                 width = buffer.readU32BE(20);
+                                return true;
+                            } else {
+                                return false;
                             }
-                            break;
                         }
                         uint32_t boxLength = buffer.readU32BE(0);
                         offset += boxLength;
                     }
 
-                    return true;
+                    return false;
                 }
         ),
 
@@ -1076,14 +1076,16 @@ static const std::vector<IIDetector> s_ii_detectors = { // NOLINT(cert-err58-cpp
                     if (firstChunkType == "IHDR" && buffer.size() >= 24) {
                         width = buffer.readU32BE(16);
                         height = buffer.readU32BE(20);
+                        return true;
                     } else if (firstChunkType == "CgBI") {
                         if (buffer.readString(28, 4) == "IHDR" && buffer.size() >= 40) {
                             width = buffer.readU32BE(32);
                             height = buffer.readU32BE(36);
+                            return true;
                         }
                     }
 
-                    return true;
+                    return false;
                 }
         ),
 
@@ -1156,7 +1158,7 @@ static const std::vector<IIDetector> s_ii_detectors = { // NOLINT(cert-err58-cpp
 
                     auto offset = buffer.readInt<uint32_t>(4, swapEndian);
                     if (length < offset + 2) {
-                        return true;
+                        return false;
                     }
 
                     buffer = ri.readBuffer(offset, 2);
@@ -1189,8 +1191,7 @@ static const std::vector<IIDetector> s_ii_detectors = { // NOLINT(cert-err58-cpp
                             }
                         }
                     }
-
-                    return true;
+                    return width != -1 && height != -1;
                 }
         ),
 
@@ -1216,10 +1217,12 @@ static const std::vector<IIDetector> s_ii_detectors = { // NOLINT(cert-err58-cpp
                     if (type == "VP8 " && buffer.size() >= 30) {
                         width = buffer.readU16LE(26) & 0x3FFF;
                         height = buffer.readU16LE(28) & 0x3FFF;
+                        return true;
                     } else if (type == "VP8L" && buffer.size() >= 25) {
                         uint32_t n = buffer.readU32LE(21);
                         width = (n & 0x3FFF) + 1;
                         height = ((n >> 14) & 0x3FFF) + 1;
+                        return true;
                     } else if (type == "VP8X" && buffer.size() >= 30) {
                         uint8_t extendedHeader = buffer.readU8(20);
                         bool validStart = (extendedHeader & 0xc0) == 0;
@@ -1227,12 +1230,13 @@ static const std::vector<IIDetector> s_ii_detectors = { // NOLINT(cert-err58-cpp
                         if (validStart && validEnd) {
                             width = (buffer.readU32LE(24) & 0x00FFFFFF) + 1;
                             height = ((buffer.readU32LE(26) & 0xFFFFFF00) >> 8) + 1;
+                            return true;
                         } else {
                             // Invalid
                         }
                     }
 
-                    return true;
+                    return false;
                 }
         ),
 
@@ -1347,7 +1351,7 @@ public:
             m_mimetype = detector.mimetype;
             m_err = m_width != -1 && m_height != -1
                     ? II_ERR_OK
-                    : II_ERR_DECODE_SIZE_FAILED;
+                    : II_ERR_UNRECOGNIZED_FORMAT;
         }
         return match;
     }
@@ -1388,10 +1392,7 @@ public:
         return {m_width, m_height};
     }
 
-    inline std::vector<std::array<int64_t, 2>> getEntrySizes() const {
-        if (m_entrySizes.empty()) {
-            return {getSize()};
-        }
+    inline const std::vector<std::array<int64_t, 2>> &getEntrySizes() const {
         return m_entrySizes;
     }
 
@@ -1406,9 +1407,7 @@ public:
             case II_ERR_OK:
                 return "Ok";
             case II_ERR_UNRECOGNIZED_FORMAT:
-                return "Unrecognized format";
-            case II_ERR_DECODE_SIZE_FAILED:
-                return "Decode image size failed";
+                return "Unrecognized image format";
         }
     }
 

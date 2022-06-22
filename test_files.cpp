@@ -129,7 +129,7 @@ int main() {
     }
 
     {
-        ASSET_II(IMAGES_DIRECTORY "invalid/sample.png", II_ERR_DECODE_SIZE_FAILED, II_FORMAT_PNG, -1l, -1l);
+        ASSET_II(IMAGES_DIRECTORY "invalid/sample.png", II_ERR_UNRECOGNIZED_FORMAT, II_FORMAT_UNKNOWN, -1l, -1l);
     }
 
     return 0;
