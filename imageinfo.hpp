@@ -1031,6 +1031,7 @@ static const std::vector<IIDetector> s_ii_detectors = { // NOLINT(cert-err58-cpp
         ),
 
         ///////////////////////// KTX /////////////////////////
+        // https://www.khronos.org/registry/KTX/specs/1.0/ktxspec_v1.html
         IIDetector(
                 II_FORMAT_KTX,
                 "ktx",
@@ -1043,7 +1044,7 @@ static const std::vector<IIDetector> s_ii_detectors = { // NOLINT(cert-err58-cpp
                         return false;
                     }
                     auto buffer = ri.readBuffer(0, 44);
-                    if (!buffer.cmp(1, 6, "KTX 11")) {
+                    if (!buffer.cmp(0, 12, "\xABKTX 11\xBB\r\n\x1A\n")) {
                         return false;
                     }
 
