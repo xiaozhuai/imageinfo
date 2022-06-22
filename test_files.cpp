@@ -101,6 +101,7 @@ int main() {
     {
         ASSET_II(IMAGES_DIRECTORY "valid/png/sample.png", II_ERR_OK, II_FORMAT_PNG, 123l, 456l);
         ASSET_II(IMAGES_DIRECTORY "valid/png/sample_fried.png", II_ERR_OK, II_FORMAT_PNG, 128l, 68l);
+        ASSET_II(IMAGES_DIRECTORY "valid/png/sample_apng.png", II_ERR_OK, II_FORMAT_PNG, 480l, 400l);
     }
 
     {
