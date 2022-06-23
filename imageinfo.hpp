@@ -371,9 +371,9 @@ public:
         assert(offset + size <= m_length);
         IIBuffer buffer(size);
 #ifndef II_DISABLE_HEADER_CACHE
-        if (offset + size < m_headerCache.size()) {
+        if (offset + size <= m_headerCache.size()) {
             memcpy(buffer.data(), m_headerCache.data() + offset, size);
-        } else if (offset < m_headerCache.size() && m_headerCache.size() - offset > (II_HEADER_CACHE_SIZE / 4)) {
+        } else if (offset < m_headerCache.size() && m_headerCache.size() - offset >= (II_HEADER_CACHE_SIZE / 4)) {
             size_t head = m_headerCache.size() - offset;
             memcpy(buffer.data(), m_headerCache.data() + offset, head);
             read(buffer.data() + head, offset + head, size - head);
