@@ -46,6 +46,10 @@
 #include <cstdio>
 #include <cassert>
 
+#ifndef II_HEADER_CACHE_SIZE
+#define II_HEADER_CACHE_SIZE    (1024)
+#endif
+
 #ifdef ANDROID
 #include <android/asset_manager.h>
 #endif
@@ -219,7 +223,12 @@ class IIBuffer {
 public:
     IIBuffer() = default;
 
-    explicit IIBuffer(size_t size) : m_size(size) {
+    explicit IIBuffer(size_t size) {
+        alloc(size);
+    }
+
+    inline void alloc(size_t size) {
+        m_size = size;
         m_data = std::shared_ptr<uint8_t>(new uint8_t[size], std::default_delete<uint8_t[]>());
     }
 
@@ -350,13 +359,30 @@ public:
 
     IIReadInterface(IIReadFunc &readFunc, size_t length)
             : m_readFunc(readFunc),
-              m_length(length) {}
+              m_length(length) {
+#ifndef II_DISABLE_HEADER_CACHE
+        m_headerCache.alloc(std::min((size_t) II_HEADER_CACHE_SIZE, length));
+        read(m_headerCache.data(), 0, m_headerCache.size());
+#endif
+    }
 
     inline IIBuffer readBuffer(off_t offset, size_t size) {
         assert(offset >= 0);
         assert(offset + size <= m_length);
         IIBuffer buffer(size);
+#ifndef II_DISABLE_HEADER_CACHE
+        if (offset + size < m_headerCache.size()) {
+            memcpy(buffer.data(), m_headerCache.data() + offset, size);
+        } else if (offset < m_headerCache.size() && m_headerCache.size() - offset > (II_HEADER_CACHE_SIZE / 4)) {
+            size_t head = m_headerCache.size() - offset;
+            memcpy(buffer.data(), m_headerCache.data() + offset, head);
+            read(buffer.data() + head, offset + head, size - head);
+        } else {
+            read(buffer.data(), offset, size);
+        }
+#else
         read(buffer.data(), offset, size);
+#endif
         return buffer;
     }
 
@@ -372,6 +398,9 @@ private:
 private:
     IIReadFunc &m_readFunc;
     size_t m_length = 0;
+#ifndef II_DISABLE_HEADER_CACHE
+    IIBuffer m_headerCache;
+#endif
 };
 
 typedef std::function<bool(size_t length, IIReadInterface &ri,
@@ -1322,7 +1351,7 @@ public:
 
     explicit ImageInfo(IIReadInterface &ri, IIFormat likelyFormat = II_FORMAT_UNKNOWN, bool mustBe = false) {
         if (likelyFormat != II_FORMAT_UNKNOWN) {
-            for (const auto &detector : s_ii_detectors) {
+            for (const auto &detector: s_ii_detectors) {
                 if (detector.format == likelyFormat) {
                     if (tryDetector(detector, ri)) return;
                     break;
@@ -1334,7 +1363,7 @@ public:
             }
         }
 
-        for (const auto &detector : s_ii_detectors) {
+        for (const auto &detector: s_ii_detectors) {
             if (detector.format == likelyFormat) continue;
             if (tryDetector(detector, ri)) return;
         }
