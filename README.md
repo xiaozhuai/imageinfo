@@ -51,8 +51,9 @@ cmake --build build -- check
 
 ### Windows
 
+Open Visual Studio Command Prompt and run these command
+
 ```cmd
-call "C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\VC\Auxiliary\Build\vcvars32.bat"
 cmake -G "NMake Makefiles" -B build .
 cmake --build build -- all
 cmake --build build -- check
