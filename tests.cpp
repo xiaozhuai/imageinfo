@@ -53,6 +53,7 @@ int main() {
 
     {
         ASSET_II(IMAGES_DIRECTORY "valid/hdr/sample.hdr", II_ERR_OK, II_FORMAT_HDR, 123l, 456l);
+        ASSET_II(IMAGES_DIRECTORY "valid/hdr/sample2.hdr", II_ERR_OK, II_FORMAT_HDR, 1024l, 512l);
     }
 
     {

@@ -657,7 +657,8 @@ static const std::vector<IIDetector> s_ii_detectors = { // NOLINT(cert-err58-cpp
                     }
 
                     auto buffer = ri.readBuffer(0, 6);
-                    if (!buffer.cmpAnyOf(0, 6, {"#?RGBE", "#?XYZE"})) {
+                    auto buffer2 = ri.readBuffer(0, 10);
+                    if (!buffer.cmpAnyOf(0, 6, {"#?RGBE", "#?XYZE"}) && !buffer2.cmp(0, 10, "#?RADIANCE")) {
                         return false;
                     }
 
