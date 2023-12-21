@@ -448,12 +448,12 @@ static const std::vector<IIDetector> s_ii_detectors = { // NOLINT(cert-err58-cpp
                     /**
                      * Major Brand
                      *
-                     * AVIF: "avif"
+                     * AVIF: "avif", "avis"
                      * HEIF: "mif1", "msf1"
                      * HEIC: "heic", "heix", "hevc", "hevx"
                      *
                      */
-                    if (!buffer.cmpAnyOf(8, 4, {"avif", "mif1", "msf1", "heic", "heix", "hevc", "hevx"})) {
+                    if (!buffer.cmpAnyOf(8, 4, {"avif", "avis", "mif1", "msf1", "heic", "heix", "hevc", "hevx"})) {
                         return false;
                     }
 
