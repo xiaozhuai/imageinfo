@@ -988,6 +988,11 @@ static const std::vector<IIDetector> s_ii_detectors = { // NOLINT(cert-err58-cpp
                     while (offset + 9 <= length) {
                         buffer = ri.readBuffer(offset, 9);
                         uint16_t sectionSize = buffer.readU16BE(2);
+                        if (!buffer.cmp(0, 1, "\xFF")) {
+                            // skip garbage bytes
+                            offset += 1;
+                            continue;
+                        }
 
                         // 0xFFC0 is baseline standard (SOF0)
                         // 0xFFC1 is baseline optimized (SOF1)

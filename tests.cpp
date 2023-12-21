@@ -87,6 +87,7 @@ int main() {
         ASSET_II(IMAGES_DIRECTORY "valid/jpg/optimized.jpg", II_ERR_OK, II_FORMAT_JPEG, 123l, 456l);
         ASSET_II(IMAGES_DIRECTORY "valid/jpg/progressive.jpg", II_ERR_OK, II_FORMAT_JPEG, 123l, 456l);
         ASSET_II(IMAGES_DIRECTORY "valid/jpg/sample.jpg", II_ERR_OK, II_FORMAT_JPEG, 123l, 456l);
+        ASSET_II(IMAGES_DIRECTORY "valid/jpg/sample2.jpg", II_ERR_OK, II_FORMAT_JPEG, 1200l, 1603l);
         ASSET_II(IMAGES_DIRECTORY "valid/jpg/sampleExported.jpg", II_ERR_OK, II_FORMAT_JPEG, 123l, 456l);
         ASSET_II(IMAGES_DIRECTORY "valid/jpg/very-large.jpg", II_ERR_OK, II_FORMAT_JPEG, 4800l, 3600l);
     }
