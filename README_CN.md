@@ -39,6 +39,14 @@ Rust 版本: [imageinfo-rs](https://github.com/xiaozhuai/imageinfo-rs)
 * [x] webp
 * [ ] 更多...
 
+## Vcpkg
+
+imageinfo 可以通过 [vcpkg](https://github.com/microsoft/vcpkg) 安装
+
+```shell
+vcpgk install imageinfo
+```
+
 ## 构建 & 测试
 
 ### Linux & MacOS
