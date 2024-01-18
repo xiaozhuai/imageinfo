@@ -10,10 +10,7 @@ imageinfo 并不是通过扩展名来识别图片格式，而是通过文件头�
 
 Rust 版本: [imageinfo-rs](https://github.com/xiaozhuai/imageinfo-rs)
 
-[![linux](https://github.com/xiaozhuai/imageinfo/actions/workflows/linux.yml/badge.svg)](https://github.com/xiaozhuai/imageinfo/actions/workflows/linux.yml)
-[![macos](https://github.com/xiaozhuai/imageinfo/actions/workflows/macos.yml/badge.svg)](https://github.com/xiaozhuai/imageinfo/actions/workflows/macos.yml)
-[![windows-x64](https://github.com/xiaozhuai/imageinfo/actions/workflows/windows-x64.yml/badge.svg)](https://github.com/xiaozhuai/imageinfo/actions/workflows/windows-x64.yml)
-[![windows-x86](https://github.com/xiaozhuai/imageinfo/actions/workflows/windows-x86.yml/badge.svg)](https://github.com/xiaozhuai/imageinfo/actions/workflows/windows-x86.yml)
+[![ci](https://github.com/xiaozhuai/imageinfo/actions/workflows/ci.yml/badge.svg)](https://github.com/xiaozhuai/imageinfo/actions/workflows/ci.yml)
 
 ## 支持格式
 

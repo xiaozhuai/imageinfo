@@ -10,10 +10,7 @@ Some test image files are from [image-size](https://github.com/image-size/image-
 
 Rust version: [imageinfo-rs](https://github.com/xiaozhuai/imageinfo-rs)
 
-[![linux](https://github.com/xiaozhuai/imageinfo/actions/workflows/linux.yml/badge.svg)](https://github.com/xiaozhuai/imageinfo/actions/workflows/linux.yml)
-[![macos](https://github.com/xiaozhuai/imageinfo/actions/workflows/macos.yml/badge.svg)](https://github.com/xiaozhuai/imageinfo/actions/workflows/macos.yml)
-[![windows-x64](https://github.com/xiaozhuai/imageinfo/actions/workflows/windows-x64.yml/badge.svg)](https://github.com/xiaozhuai/imageinfo/actions/workflows/windows-x64.yml)
-[![windows-x86](https://github.com/xiaozhuai/imageinfo/actions/workflows/windows-x86.yml/badge.svg)](https://github.com/xiaozhuai/imageinfo/actions/workflows/windows-x86.yml)
+[![ci](https://github.com/xiaozhuai/imageinfo/actions/workflows/ci.yml/badge.svg)](https://github.com/xiaozhuai/imageinfo/actions/workflows/ci.yml)
 
 ## Supported formats
 

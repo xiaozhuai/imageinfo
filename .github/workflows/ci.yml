@@ -1,0 +1,64 @@
+name: ci
+
+on:
+    push:
+        branches: [ master ]
+    pull_request:
+        branches: [ master ]
+
+jobs:
+    linux:
+        runs-on: ubuntu-latest
+        steps:
+            -   name: Checkout
+                uses: actions/checkout@v3
+                with:
+                    submodules: recursive
+            -   name: Build
+                run: |
+                    cmake -B build .
+                    cmake --build build -- all
+                    cmake --build build -- check
+
+    macos:
+        runs-on: macos-latest
+        steps:
+            -   name: Checkout
+                uses: actions/checkout@v3
+                with:
+                    submodules: recursive
+            -   name: Build
+                run: |
+                    cmake -B build .
+                    cmake --build build -- all
+                    cmake --build build -- check
+
+    windows-x64:
+        runs-on: windows-2019
+        steps:
+            -   name: Checkout
+                uses: actions/checkout@v3
+                with:
+                    submodules: recursive
+            -   name: Build
+                shell: cmd
+                run: |
+                    call "C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\VC\Auxiliary\Build\vcvars64.bat"
+                    cmake -GNinja -B build .
+                    cmake --build build -- all
+                    cmake --build build -- check
+
+    windows-x86:
+        runs-on: windows-2019
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v3
+              with:
+                  submodules: recursive
+            - name: Build
+              shell: cmd
+              run: |
+                  call "C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\VC\Auxiliary\Build\vcvars32.bat"
+                  cmake -GNinja -B build .
+                  cmake --build build -- all
+                  cmake --build build -- check
