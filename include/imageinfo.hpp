@@ -30,6 +30,12 @@
 #ifndef IMAGEINFO_IMAGEINFO_H
 #define IMAGEINFO_IMAGEINFO_H
 
+#ifndef NOMINMAX
+#define NOMINMAX
+#else
+#define DEFINED_NOMINMAX
+#endif
+
 #include <algorithm>
 #include <array>
 #include <cassert>
@@ -310,8 +316,7 @@ public:
 
     ReadInterface(ReadFunc &read_func, size_t length) : read_func_(read_func), length_(length) {
 #ifndef II_DISABLE_HEADER_CACHE
-        size_t min = length < II_HEADER_CACHE_SIZE ? length : II_HEADER_CACHE_SIZE;
-        header_cache_.alloc(min);
+        header_cache_.alloc(std::min((size_t)II_HEADER_CACHE_SIZE, length));
         read(header_cache_.data(), 0, header_cache_.size());
 #endif
     }
@@ -738,7 +743,7 @@ bool try_icns(ReadInterface &ri, size_t length, ImageInfo &info) {
         uint32_t entry_size = buffer.read_u32_be(4);
         int64_t s = size_map.at(type);
         entry_sizes.emplace_back(s, s);
-        max_size = max_size > s ? max_size : s;
+        max_size = std::max(max_size, s);
         offset += entry_size;
     }
 
@@ -1191,6 +1196,10 @@ inline ImageInfo parse(InputType &input,                                //
 
 #ifdef __clang__
 #pragma clang diagnostic pop
+#endif
+
+#ifndef DEFINED_NOMINMAX
+#undef NOMINMAX
 #endif
 
 #endif  // IMAGEINFO_IMAGEINFO_H
