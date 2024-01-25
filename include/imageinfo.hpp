@@ -310,7 +310,8 @@ public:
 
     ReadInterface(ReadFunc &read_func, size_t length) : read_func_(read_func), length_(length) {
 #ifndef II_DISABLE_HEADER_CACHE
-        header_cache_.alloc(std::min((size_t)II_HEADER_CACHE_SIZE, length));
+        size_t min = length < II_HEADER_CACHE_SIZE ? length : II_HEADER_CACHE_SIZE;
+        header_cache_.alloc(min);
         read(header_cache_.data(), 0, header_cache_.size());
 #endif
     }
@@ -737,7 +738,7 @@ bool try_icns(ReadInterface &ri, size_t length, ImageInfo &info) {
         uint32_t entry_size = buffer.read_u32_be(4);
         int64_t s = size_map.at(type);
         entry_sizes.emplace_back(s, s);
-        max_size = std::max(max_size, s);
+        max_size = max_size > s ? max_size : s;
         offset += entry_size;
     }
 
