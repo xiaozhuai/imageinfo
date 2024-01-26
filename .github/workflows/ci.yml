@@ -11,13 +11,12 @@ jobs:
         runs-on: ubuntu-22.04
         steps:
             -   name: Checkout
-                uses: actions/checkout@v3
+                uses: actions/checkout@v4
                 with:
                     submodules: recursive
             -   name: Install clang-format-17
                 run: |
-                    sudo apt-get remove clang-format*
-                    sudo apt-get autoremove
+                    sudo apt-get autoremove --purge clang-format*
                     wget -qO- https://apt.llvm.org/llvm-snapshot.gpg.key | sudo tee /etc/apt/trusted.gpg.d/apt.llvm.org.asc
                     echo "deb https://apt.llvm.org/jammy/ llvm-toolchain-jammy-17 main" | sudo tee -a /etc/apt/sources.list
                     echo "deb-src https://apt.llvm.org/jammy/ llvm-toolchain-jammy-17 main" | sudo tee -a /etc/apt/sources.list
@@ -32,16 +31,19 @@ jobs:
 
     windows:
         needs: code-style
-        runs-on: windows-latest
+        runs-on: ${{ matrix.runner }}
         strategy:
             matrix:
+                runner:
+                    - windows-2019
+                    - windows-2022
                 arch:
                     - amd64
                     - x86
                     - amd64_arm64
         steps:
             -   name: Checkout
-                uses: actions/checkout@v3
+                uses: actions/checkout@v4
                 with:
                     submodules: recursive
             -   uses: ilammy/msvc-dev-cmd@v1
@@ -60,15 +62,19 @@ jobs:
 
     macos:
         needs: code-style
-        runs-on: macos-latest
+        runs-on: ${{ matrix.runner }}
         strategy:
             matrix:
+                runner:
+                    - macos-11
+                    - macos-12
+                    - macos-13
                 arch:
                     - x86_64
                     - arm64
         steps:
             -   name: Checkout
-                uses: actions/checkout@v3
+                uses: actions/checkout@v4
                 with:
                     submodules: recursive
             -   name: Build
@@ -82,10 +88,15 @@ jobs:
 
     linux:
         needs: code-style
-        runs-on: ubuntu-latest
+        runs-on: ${{ matrix.runner }}
+        strategy:
+            matrix:
+                runner:
+                    - ubuntu-20.04
+                    - ubuntu-22.04
         steps:
             -   name: Checkout
-                uses: actions/checkout@v3
+                uses: actions/checkout@v4
                 with:
                     submodules: recursive
             -   name: Build
