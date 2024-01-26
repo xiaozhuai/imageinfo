@@ -285,7 +285,7 @@ public:
 
 private:
     template <typename T>
-    static T swap_e(T u) {
+    static inline T swap_e(T u) {
         union {
             T u;
             uint8_t u8[sizeof(T)];
@@ -375,15 +375,15 @@ public:
         : format_(format), ext_(ext), full_ext_(full_ext), mimetype_(mimetype) {}
 
 public:
-    void set_size(const ImageSize &size) { size_ = size; }
+    inline void set_size(const ImageSize &size) { size_ = size; }
 
-    void set_size(int64_t width, int64_t height) { size_ = ImageSize(width, height); }
+    inline void set_size(int64_t width, int64_t height) { size_ = ImageSize(width, height); }
 
-    void set_entry_sizes(const EntrySizes &entry_sizes) { entry_sizes_ = entry_sizes; }
+    inline void set_entry_sizes(const EntrySizes &entry_sizes) { entry_sizes_ = entry_sizes; }
 
-    void add_entry_size(const ImageSize &size) { entry_sizes_.emplace_back(size); }
+    inline void add_entry_size(const ImageSize &size) { entry_sizes_.emplace_back(size); }
 
-    void add_entry_size(int64_t width, int64_t height) { entry_sizes_.emplace_back(width, height); }
+    inline void add_entry_size(int64_t width, int64_t height) { entry_sizes_.emplace_back(width, height); }
 
 public:
     inline explicit operator bool() const { return error_ == kNoError; }
@@ -429,7 +429,7 @@ private:
 
 // https://nokiatech.github.io/heif/technical.html
 // https://www.jianshu.com/p/b016d10a087d
-bool try_avif_heic(ReadInterface &ri, size_t length, ImageInfo &info) {
+inline bool try_avif_heic(ReadInterface &ri, size_t length, ImageInfo &info) {
     if (length < 4) {
         return false;
     }
@@ -523,7 +523,7 @@ bool try_avif_heic(ReadInterface &ri, size_t length, ImageInfo &info) {
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 // https://www.fileformat.info/format/bmp/corion.htm
-bool try_bmp(ReadInterface &ri, size_t length, ImageInfo &info) {
+inline bool try_bmp(ReadInterface &ri, size_t length, ImageInfo &info) {
     if (length < 26) {
         return false;
     }
@@ -543,7 +543,7 @@ bool try_bmp(ReadInterface &ri, size_t length, ImageInfo &info) {
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-bool try_cur_ico(ReadInterface &ri, size_t length, ImageInfo &info) {
+inline bool try_cur_ico(ReadInterface &ri, size_t length, ImageInfo &info) {
     if (length < 6) {
         return false;
     }
@@ -601,7 +601,7 @@ bool try_cur_ico(ReadInterface &ri, size_t length, ImageInfo &info) {
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-bool try_dds(ReadInterface &ri, size_t length, ImageInfo &info) {
+inline bool try_dds(ReadInterface &ri, size_t length, ImageInfo &info) {
     if (length < 20) {
         return false;
     }
@@ -621,7 +621,7 @@ bool try_dds(ReadInterface &ri, size_t length, ImageInfo &info) {
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 // https://www.fileformat.info/format/gif/corion.htm
-bool try_gif(ReadInterface &ri, size_t length, ImageInfo &info) {
+inline bool try_gif(ReadInterface &ri, size_t length, ImageInfo &info) {
     if (length < 10) {
         return false;
     }
@@ -641,7 +641,7 @@ bool try_gif(ReadInterface &ri, size_t length, ImageInfo &info) {
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 // http://paulbourke.net/dataformats/pic/
-bool try_hdr(ReadInterface &ri, size_t length, ImageInfo &info) {
+inline bool try_hdr(ReadInterface &ri, size_t length, ImageInfo &info) {
     if (length < 6) {
         return false;
     }
@@ -678,7 +678,7 @@ bool try_hdr(ReadInterface &ri, size_t length, ImageInfo &info) {
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-bool try_icns(ReadInterface &ri, size_t length, ImageInfo &info) {
+inline bool try_icns(ReadInterface &ri, size_t length, ImageInfo &info) {
     if (length < 8) {
         return false;
     }
@@ -751,7 +751,7 @@ bool try_icns(ReadInterface &ri, size_t length, ImageInfo &info) {
 
 // https://docs.fileformat.com/image/jp2/
 // https://docs.fileformat.com/image/jpx/
-bool try_jp2_jpx(ReadInterface &ri, size_t length, ImageInfo &info) {
+inline bool try_jp2_jpx(ReadInterface &ri, size_t length, ImageInfo &info) {
     if (length < 8) {
         return false;
     }
@@ -812,7 +812,7 @@ bool try_jp2_jpx(ReadInterface &ri, size_t length, ImageInfo &info) {
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 // https://www.fileformat.info/format/jpeg/corion.htm
-bool try_jpg(ReadInterface &ri, size_t length, ImageInfo &info) {
+inline bool try_jpg(ReadInterface &ri, size_t length, ImageInfo &info) {
     if (length < 2) {
         return false;
     }
@@ -851,7 +851,7 @@ bool try_jpg(ReadInterface &ri, size_t length, ImageInfo &info) {
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 // https://www.khronos.org/registry/KTX/specs/1.0/ktxspec_v1.html
-bool try_ktx(ReadInterface &ri, size_t length, ImageInfo &info) {
+inline bool try_ktx(ReadInterface &ri, size_t length, ImageInfo &info) {
     if (length < 44) {
         return false;
     }
@@ -871,7 +871,7 @@ bool try_ktx(ReadInterface &ri, size_t length, ImageInfo &info) {
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 // https://www.fileformat.info/format/png/corion.htm
-bool try_png(ReadInterface &ri, size_t length, ImageInfo &info) {
+inline bool try_png(ReadInterface &ri, size_t length, ImageInfo &info) {
     if (length < 4) {
         return false;
     }
@@ -905,7 +905,7 @@ bool try_png(ReadInterface &ri, size_t length, ImageInfo &info) {
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-bool try_psd(ReadInterface &ri, size_t length, ImageInfo &info) {
+inline bool try_psd(ReadInterface &ri, size_t length, ImageInfo &info) {
     if (length < 22) {
         return false;
     }
@@ -924,7 +924,7 @@ bool try_psd(ReadInterface &ri, size_t length, ImageInfo &info) {
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-bool try_qoi(ReadInterface &ri, size_t length, ImageInfo &info) {
+inline bool try_qoi(ReadInterface &ri, size_t length, ImageInfo &info) {
     if (length < 12) {
         return false;
     }
@@ -944,7 +944,7 @@ bool try_qoi(ReadInterface &ri, size_t length, ImageInfo &info) {
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 // https://www.fileformat.info/format/tiff/corion.htm
-bool try_tiff(ReadInterface &ri, size_t length, ImageInfo &info) {
+inline bool try_tiff(ReadInterface &ri, size_t length, ImageInfo &info) {
     if (length < 8) {
         return false;
     }
@@ -999,7 +999,7 @@ bool try_tiff(ReadInterface &ri, size_t length, ImageInfo &info) {
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 // https://developers.google.com/speed/webp/docs/riff_container
-bool try_webp(ReadInterface &ri, size_t length, ImageInfo &info) {
+inline bool try_webp(ReadInterface &ri, size_t length, ImageInfo &info) {
     if (length < 16) {
         return false;
     }
@@ -1045,7 +1045,7 @@ bool try_webp(ReadInterface &ri, size_t length, ImageInfo &info) {
 
 // TODO Not rigorous enough, keep it as last detector
 // https://www.fileformat.info/format/tga/corion.htm
-bool try_tga(ReadInterface &ri, size_t length, ImageInfo &info) {
+inline bool try_tga(ReadInterface &ri, size_t length, ImageInfo &info) {
     if (length < 18) {
         return false;
     }
