@@ -652,14 +652,15 @@ inline bool try_hdr(ReadInterface &ri, size_t length, ImageInfo &info) {
         return false;
     }
 
-    int read = 6;
+    off_t offset = 6;
     const size_t piece = 64;
     std::string header;
     static const std::regex x_pattern(R"(\s[+-]X\s(\d+)\s)");
     static const std::regex y_pattern(R"(\s[+-]Y\s(\d+)\s)");
-    while (read < length) {
-        header += ri.read_buffer(read, std::min<size_t>(length - read, piece)).to_string();
-        read += piece;
+    while (offset < length) {
+        buffer = ri.read_buffer(offset, std::min<size_t>(length - offset, piece));
+        offset += (off_t)buffer.size();
+        header += buffer.to_string();
         std::smatch x_results;
         std::smatch y_results;
         std::regex_search(header, x_results, x_pattern);
