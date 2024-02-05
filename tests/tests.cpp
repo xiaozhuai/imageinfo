@@ -113,6 +113,17 @@ int main() {
         ASSET_II(IMAGES_DIR "valid/webp/lossy.webp", kNoError, kFormatWebp, 123l, 456l);
     }
 
+    {
+        ASSET_II(IMAGES_DIR "valid/pnm/sample-ascii.pbm", kNoError, kFormatPbm, 123l, 456l);
+        ASSET_II(IMAGES_DIR "valid/pnm/sample-ascii.pgm", kNoError, kFormatPgm, 123l, 456l);
+        ASSET_II(IMAGES_DIR "valid/pnm/sample-ascii.ppm", kNoError, kFormatPpm, 123l, 456l);
+        ASSET_II(IMAGES_DIR "valid/pnm/sample.pbm", kNoError, kFormatPbm, 123l, 456l);
+        ASSET_II(IMAGES_DIR "valid/pnm/sample.pgm", kNoError, kFormatPgm, 123l, 456l);
+        ASSET_II(IMAGES_DIR "valid/pnm/sample.ppm", kNoError, kFormatPpm, 123l, 456l);
+        ASSET_II(IMAGES_DIR "valid/pnm/sample.pam", kNoError, kFormatPam, 123l, 456l);
+        ASSET_II(IMAGES_DIR "valid/pnm/sample.pfm", kNoError, kFormatPfm, 123l, 456l);
+    }
+
     { ASSET_II(IMAGES_DIR "valid/tga/sample.tga", kNoError, kFormatTga, 123l, 456l); }
 
     return 0;
