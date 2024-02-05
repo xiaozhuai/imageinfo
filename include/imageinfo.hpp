@@ -1111,7 +1111,9 @@ using Detector = bool (*)(ReadInterface &ri, size_t length, ImageInfo &info);
 inline ImageInfo parse(ReadInterface &ri,                               //
                        const std::vector<Format> &likely_formats = {},  //
                        bool must_be_one_of_likely_formats = false) {    //
-    static std::vector<std::tuple<Format, Detector>> dl = {
+    size_t length = ri.length();
+
+    std::vector<std::tuple<Format, Detector>> dl = {
         {kFormatAvif, try_avif_heic},
         {kFormatHeic, try_avif_heic},
         { kFormatBmp,       try_bmp},
@@ -1139,19 +1141,17 @@ inline ImageInfo parse(ReadInterface &ri,                               //
         dm[std::get<0>(d)] = std::get<1>(d);
     }
 
+    std::unordered_set<Detector> tried;
+
     ImageInfo info;
-    size_t length = ri.length();
 
-    bool has_likely_formats = !likely_formats.empty();
-    std::unordered_set<int> likely_formats_set;
-    likely_formats_set.reserve(likely_formats.size());
-    for (auto format : likely_formats) {
-        likely_formats_set.insert(format);
-    }
-
-    if (has_likely_formats) {
+    if (!likely_formats.empty()) {
         for (auto format : likely_formats) {
             auto &detector = dm[format];
+            if (tried.find(detector) != tried.end()) {
+                continue;
+            }
+            tried.insert(detector);
             if (detector(ri, length, info)) {
                 return info;
             }
@@ -1162,11 +1162,12 @@ inline ImageInfo parse(ReadInterface &ri,                               //
     }
 
     for (auto &d : dl) {
-        auto &format = std::get<0>(d);
+        // auto &format = std::get<0>(d);
         auto &detector = std::get<1>(d);
-        if (has_likely_formats && likely_formats_set.find(format) != likely_formats_set.end()) {
+        if (tried.find(detector) != tried.end()) {
             continue;
         }
+        tried.insert(detector);
         if (detector(ri, length, info)) {
             return info;
         }
