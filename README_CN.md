@@ -31,15 +31,6 @@ imageinfo 已经重构，如果你使用的是旧版本，请查看 `v1` 分支�
 * [x] ktx
 * [x] png
 * [x] psd
-* [x] pnm
-    * [x] pbm/ascii
-    * [x] pgm/ascii
-    * [x] ppm/ascii
-    * [x] pbm/binary
-    * [x] pgm/binary
-    * [x] ppm/binary
-    * [x] pam
-    * [x] pfm
 * [x] qoi
 * [ ] svg
 * [x] tga

@@ -89,11 +89,6 @@ enum Format {
     kFormatKtx,
     kFormatPng,
     kFormatPsd,
-    kFormatPbm,
-    kFormatPgm,
-    kFormatPpm,
-    kFormatPam,
-    kFormatPfm,
     kFormatQoi,
     kFormatTga,
     kFormatTiff,
@@ -1049,91 +1044,6 @@ inline bool try_webp(ReadInterface &ri, size_t length, ImageInfo &info) {
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-inline bool try_pnm(ReadInterface &ri, size_t length, ImageInfo &info) {
-    if (length < 3) {
-        return false;
-    }
-    std::unordered_map<std::string, std::tuple<Format, const char *, const char *>> pnm_types = {
-        {"P1",       {kFormatPbm, "pbm", "image/x-portable-bitmap"}}, // ASCII PBM
-        {"P2",      {kFormatPgm, "pgm", "image/x-portable-graymap"}}, // ASCII PGM
-        {"P3",       {kFormatPpm, "ppm", "image/x-portable-pixmap"}}, // ASCII PPM
-        {"P4",       {kFormatPbm, "pbm", "image/x-portable-bitmap"}}, // Binary PBM
-        {"P5",      {kFormatPgm, "pgm", "image/x-portable-graymap"}}, // Binary PGM
-        {"P6",       {kFormatPpm, "ppm", "image/x-portable-pixmap"}}, // Binary PPM
-        {"P7", {kFormatPam, "pam", "image/x-portable-arbitrarymap"}}, // PAM
-        {"PF",     {kFormatPfm, "pfm", "image/x-portable-floatmap"}}, // PFM
-    };
-    auto buffer = ri.read_buffer(0, 3);
-    if (!buffer.cmp(2, 1, "\n") || pnm_types.find(buffer.read_string(0, 2)) == pnm_types.end()) {
-        return false;
-    }
-    const auto &type = pnm_types[buffer.read_string(0, 2)];
-    const Format format = std::get<0>(type);
-    const char *ext = std::get<1>(type);
-    const char *mime = std::get<2>(type);
-    bool is_pam = format == kFormatPam;
-    int needed_lines = is_pam ? 2 : 1;
-
-    off_t offset = 3;
-    const size_t piece = 64;
-    std::vector<std::string> lines;
-    std::vector<size_t> line_ends;
-    std::string header;
-    while (offset < length && lines.size() < needed_lines) {
-        buffer = ri.read_buffer(offset, std::min<size_t>(length - offset, piece));
-        offset += (off_t)buffer.size();
-        header += buffer.to_string();
-        while (lines.size() < needed_lines) {
-            size_t last_pos = line_ends.empty() ? 0 : (line_ends.back() + 1);
-            size_t pos = header.find('\n', last_pos);
-            if (pos == std::string::npos) {
-                break;
-            }
-            auto line = header.substr(last_pos, pos - last_pos);
-            if (!line.empty() && line[0] != '#') {
-                lines.emplace_back(line);
-            }
-            line_ends.emplace_back(pos);
-        }
-    }
-
-    if (is_pam) {
-        int64_t width = -1;
-        int64_t height = -1;
-        for (const auto &line : lines) {
-            if (line.substr(0, 6) == "WIDTH ") {
-                width = std::stol(line.substr(6));
-            } else if (line.substr(0, 7) == "HEIGHT ") {
-                height = std::stol(line.substr(7));
-            }
-        }
-        if (width == -1 || height == -1) {
-            return false;
-        }
-        info = ImageInfo(format, ext, ext, mime);
-        info.set_size(width, height);
-        return true;
-    } else {
-        int64_t width;
-        int64_t height;
-        const auto &line = lines[0];
-        size_t pos = line.find(' ');
-        if (pos == std::string::npos) {
-            return false;
-        }
-        width = std::stol(line.substr(0, pos));
-        height = std::stol(line.substr(pos + 1));
-        if (width == -1 || height == -1) {
-            return false;
-        }
-        info = ImageInfo(format, ext, ext, mime);
-        info.set_size(width, height);
-        return true;
-    }
-}
-
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
 // TODO Not rigorous enough, keep it as last detector
 // https://www.fileformat.info/format/tga/corion.htm
 inline bool try_tga(ReadInterface &ri, size_t length, ImageInfo &info) {
@@ -1223,11 +1133,6 @@ inline ImageInfo parse(ReadInterface &ri,                               //
         { kFormatQoi,       try_qoi},
         {kFormatTiff,      try_tiff},
         {kFormatWebp,      try_webp},
-        { kFormatPbm,       try_pnm},
-        { kFormatPgm,       try_pnm},
-        { kFormatPpm,       try_pnm},
-        { kFormatPam,       try_pnm},
-        { kFormatPfm,       try_pnm},
         { kFormatTga,       try_tga},
     };
 
