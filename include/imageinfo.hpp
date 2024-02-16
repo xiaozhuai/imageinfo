@@ -1186,10 +1186,11 @@ inline ImageInfo parse(ReadInterface &ri,                              //
 
     return ImageInfo(kUnrecognizedFormat);
 }
-inline ImageInfo parse(ReadInterface &ri,                                  //
-                       const std::vector<Format> &likely_formats = {},     //
-                       bool must_be_one_of_likely_formats = false) {       //
-	return parse(ri, Format::kFormatUnknown, likely_formats, must_be_one_of_likely_formats);
+
+inline ImageInfo parse(ReadInterface &ri,                              //
+                       const std::vector<Format> &likely_formats = {}, //
+                       bool must_be_one_of_likely_formats = false) {   //
+    return parse(ri, Format::kFormatUnknown, likely_formats, must_be_one_of_likely_formats);
 }
 
 template <typename ReaderType, typename InputType>
@@ -1205,9 +1206,9 @@ inline ImageInfo parse(const InputType &input,                         //
 }
 
 template <typename ReaderType, typename InputType>
-inline ImageInfo parse(const InputType &input,                             //
-                       const std::vector<Format> &likely_formats = {},     //
-                       bool must_be_one_of_likely_formats = false) {       //
+inline ImageInfo parse(const InputType &input,                         //
+                       const std::vector<Format> &likely_formats = {}, //
+                       bool must_be_one_of_likely_formats = false) {   //
     return parse<ReaderType>(input, Format::kFormatUnknown, likely_formats, must_be_one_of_likely_formats);
 }
 
