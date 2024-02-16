@@ -1178,7 +1178,7 @@ inline ImageInfo parse(ReadInterface &ri,                               //
 }
 
 template <typename ReaderType, typename InputType>
-inline ImageInfo parse(InputType &input,                                //
+inline ImageInfo parse(const InputType &input,                          //
                        const std::vector<Format> &likely_formats = {},  //
                        bool must_be_one_of_likely_formats = false) {    //
     ReaderType reader(input);
