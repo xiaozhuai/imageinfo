@@ -1120,37 +1120,37 @@ inline bool try_tga(ReadInterface &ri, size_t length, ImageInfo &info) {
 
 using Detector = bool (*)(ReadInterface &ri, size_t length, ImageInfo &info);
 
-inline constexpr std::tuple<Format, Detector> dl[] = {
-	{kFormatAvif, try_avif_heic},
-	{ kFormatBmp,       try_bmp},
-	{ kFormatCur,   try_cur_ico},
-	{ kFormatDds,       try_dds},
-	{ kFormatGif,       try_gif},
-	{ kFormatHdr,       try_hdr},
-	{kFormatHeic, try_avif_heic},
-	{kFormatIcns,      try_icns},
-	{ kFormatIco,   try_cur_ico},
-	{ kFormatJp2,   try_jp2_jpx},
-	{kFormatJpeg,       try_jpg},
-	{ kFormatJpx,   try_jp2_jpx},
-	{ kFormatKtx,       try_ktx},
-	{ kFormatPng,       try_png},
-	{ kFormatPsd,       try_psd},
-	{ kFormatQoi,       try_qoi},
-	{ kFormatTga,       try_tga},
-	{kFormatTiff,      try_tiff},
-	{kFormatWebp,      try_webp},
-};
-inline constexpr size_t
-	dl_len = std::size(dl),
-	byteFlagsNeeded = dl_len / 8 + ((dl_len % 8) ? 1 : 0);
-
-static_assert(dl_len == Format::FORMAT_COUNT, "Inconsistent list of imageinfo detectors, dl != Format");
-
 inline ImageInfo parse(ReadInterface &ri,                               //
                        Format most_likely_format,                       //
                        const std::vector<Format> &likely_formats = {},  //
                        bool must_be_one_of_likely_formats = false) {    //
+	constexpr std::tuple<Format, Detector> dl[] = {
+		{kFormatAvif, try_avif_heic},
+		{ kFormatBmp,       try_bmp},
+		{ kFormatCur,   try_cur_ico},
+		{ kFormatDds,       try_dds},
+		{ kFormatGif,       try_gif},
+		{ kFormatHdr,       try_hdr},
+		{kFormatHeic, try_avif_heic},
+		{kFormatIcns,      try_icns},
+		{ kFormatIco,   try_cur_ico},
+		{ kFormatJp2,   try_jp2_jpx},
+		{kFormatJpeg,       try_jpg},
+		{ kFormatJpx,   try_jp2_jpx},
+		{ kFormatKtx,       try_ktx},
+		{ kFormatPng,       try_png},
+		{ kFormatPsd,       try_psd},
+		{ kFormatQoi,       try_qoi},
+		{ kFormatTga,       try_tga},
+		{kFormatTiff,      try_tiff},
+		{kFormatWebp,      try_webp},
+	};
+	constexpr size_t
+		dl_len = std::size(dl),
+		byteFlagsNeeded = dl_len / 8 + ((dl_len % 8) ? 1 : 0);
+
+	static_assert(dl_len == Format::FORMAT_COUNT, "Inconsistent list of imageinfo detectors, dl != Format");
+
     size_t length = ri.length();
 
 	uint8_t tried[byteFlagsNeeded] = { 0 };
