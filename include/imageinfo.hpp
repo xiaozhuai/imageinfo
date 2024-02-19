@@ -1124,26 +1124,26 @@ inline ImageInfo parse(ReadInterface &ri,                               //
                        Format most_likely_format,                       //
                        const std::vector<Format> &likely_formats = {},  //
                        bool must_be_one_of_likely_formats = false) {    //
-	constexpr std::tuple<Format, Detector> dl[] = {
-		{kFormatAvif, try_avif_heic},
-		{ kFormatBmp,       try_bmp},
-		{ kFormatCur,   try_cur_ico},
-		{ kFormatDds,       try_dds},
-		{ kFormatGif,       try_gif},
-		{ kFormatHdr,       try_hdr},
-		{kFormatHeic, try_avif_heic},
-		{kFormatIcns,      try_icns},
-		{ kFormatIco,   try_cur_ico},
-		{ kFormatJp2,   try_jp2_jpx},
-		{kFormatJpeg,       try_jpg},
-		{ kFormatJpx,   try_jp2_jpx},
-		{ kFormatKtx,       try_ktx},
-		{ kFormatPng,       try_png},
-		{ kFormatPsd,       try_psd},
-		{ kFormatQoi,       try_qoi},
-		{ kFormatTga,       try_tga},
-		{kFormatTiff,      try_tiff},
-		{kFormatWebp,      try_webp},
+	constexpr std::tuple<Format, std::tuple<Detector, Format>> dl[] = {
+		{kFormatAvif, {try_avif_heic, Format::kFormatHeic}},
+		{ kFormatBmp,       {try_bmp, Format::kFormatUnknown}},
+		{ kFormatCur,   {try_cur_ico, Format::kFormatIco}},
+		{ kFormatDds,       {try_dds, Format::kFormatUnknown}},
+		{ kFormatGif,       {try_gif, Format::kFormatUnknown}},
+		{ kFormatHdr,       {try_hdr, Format::kFormatUnknown}},
+		{kFormatHeic, {try_avif_heic, Format::kFormatUnknown}},
+		{kFormatIcns,      {try_icns, Format::kFormatUnknown}},
+		{ kFormatIco,   {try_cur_ico, Format::kFormatUnknown}},
+		{ kFormatJp2,   {try_jp2_jpx, Format::kFormatJpx}},
+		{kFormatJpeg,       {try_jpg, Format::kFormatUnknown}},
+		{ kFormatJpx,   {try_jp2_jpx, Format::kFormatUnknown}},
+		{ kFormatKtx,       {try_ktx, Format::kFormatUnknown}},
+		{ kFormatPng,       {try_png, Format::kFormatUnknown}},
+		{ kFormatPsd,       {try_psd, Format::kFormatUnknown}},
+		{ kFormatQoi,       {try_qoi, Format::kFormatUnknown}},
+		{ kFormatTga,       {try_tga, Format::kFormatUnknown}},
+		{kFormatTiff,      {try_tiff, Format::kFormatUnknown}},
+		{kFormatWebp,      {try_webp, Format::kFormatUnknown}},
 	};
 	constexpr size_t
 		dl_len = std::size(dl),
@@ -1161,10 +1161,18 @@ inline ImageInfo parse(ReadInterface &ri,                               //
 		most_likely_format = Format(most_likely_format - 1);
 		auto byteIdx = most_likely_format / 8;
 		tried[byteIdx] |= (1 << (most_likely_format - (8 * byteIdx)));
-        auto &detector = std::get<1>(dl[most_likely_format]);
+		const auto &detectorAndDependant = std::get<1>(dl[most_likely_format]);
+        const auto &detector = std::get<0>(detectorAndDependant);
         if (detector(ri, length, info)) {
             return info;
         }
+		most_likely_format = std::get<1>(detectorAndDependant);
+		if(most_likely_format != Format::kFormatUnknown)
+		{
+			most_likely_format = Format(most_likely_format - 1);
+			byteIdx = most_likely_format / 8;
+			tried[byteIdx] |= (1 << (most_likely_format - (8 * byteIdx)));
+		}
     }
 
     if (!likely_formats.empty()) {
@@ -1180,10 +1188,18 @@ inline ImageInfo parse(ReadInterface &ri,                               //
                 continue;
             }
 			byteMask |= bitFlag;
-			auto &detector = std::get<1>(dl[format]);
+			const auto &detectorAndDependant = std::get<1>(dl[format]);
+			const auto &detector = std::get<0>(detectorAndDependant);
             if (detector(ri, length, info)) {
                 return info;
             }
+			format = std::get<1>(detectorAndDependant);
+			if(format != Format::kFormatUnknown)
+			{
+				format = Format(format - 1);
+				byteIdx = format / 8;
+				tried[byteIdx] |= (1 << (format - (8 * byteIdx)));
+			}
         }
         if (must_be_one_of_likely_formats) {
             return ImageInfo(kUnrecognizedFormat);
@@ -1199,10 +1215,18 @@ inline ImageInfo parse(ReadInterface &ri,                               //
 			continue;
 		}
 		byteMask |= bitFlag;
-        auto &detector = std::get<1>(d);
+		const auto &detectorAndDependant = std::get<1>(dl[format]);
+		const auto &detector = std::get<0>(detectorAndDependant);
         if (detector(ri, length, info)) {
             return info;
         }
+		format = std::get<1>(detectorAndDependant);
+		if(format != Format::kFormatUnknown)
+		{
+			format = Format(format - 1);
+			byteIdx = format / 8;
+			tried[byteIdx] |= (1 << (format - (8 * byteIdx)));
+		}
     }
 
     return ImageInfo(kUnrecognizedFormat);
