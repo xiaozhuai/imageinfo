@@ -1159,20 +1159,18 @@ inline ImageInfo parse(ReadInterface &ri,                               //
 
     if (most_likely_format != Format::kFormatUnknown) {
 		most_likely_format = Format(most_likely_format - 1);
+		const auto &detectorAndOrigin = std::get<1>(dl[most_likely_format]);
+		{
+			Format origin = std::get<1>(detectorAndOrigin);
+			if(origin != Format::kFormatUnknown)
+				most_likely_format = Format(origin - 1);
+		}
 		auto byteIdx = most_likely_format / 8;
 		tried[byteIdx] |= (1 << (most_likely_format - (8 * byteIdx)));
-		const auto &detectorAndDependant = std::get<1>(dl[most_likely_format]);
-        const auto &detector = std::get<0>(detectorAndDependant);
+        const auto &detector = std::get<0>(detectorAndOrigin);
         if (detector(ri, length, info)) {
             return info;
         }
-		most_likely_format = std::get<1>(detectorAndDependant);
-		if(most_likely_format != Format::kFormatUnknown)
-		{
-			most_likely_format = Format(most_likely_format - 1);
-			byteIdx = most_likely_format / 8;
-			tried[byteIdx] |= (1 << (most_likely_format - (8 * byteIdx)));
-		}
     }
 
     if (!likely_formats.empty()) {
@@ -1181,6 +1179,12 @@ inline ImageInfo parse(ReadInterface &ri,                               //
 				continue;
 			}
 			format = Format(format - 1);
+			const auto &detectorAndOrigin = std::get<1>(dl[format]);
+			{
+				Format origin = std::get<1>(detectorAndOrigin);
+				if(origin != Format::kFormatUnknown)
+					format = Format(origin - 1);
+			}
 			auto byteIdx = format / 8;
 			auto bitFlag = (1 << (format - (8 * byteIdx)));
 			auto &byteMask = tried[byteIdx];
@@ -1188,18 +1192,10 @@ inline ImageInfo parse(ReadInterface &ri,                               //
                 continue;
             }
 			byteMask |= bitFlag;
-			const auto &detectorAndDependant = std::get<1>(dl[format]);
-			const auto &detector = std::get<0>(detectorAndDependant);
+			const auto &detector = std::get<0>(detectorAndOrigin);
             if (detector(ri, length, info)) {
                 return info;
             }
-			format = std::get<1>(detectorAndDependant);
-			if(format != Format::kFormatUnknown)
-			{
-				format = Format(format - 1);
-				byteIdx = format / 8;
-				tried[byteIdx] |= (1 << (format - (8 * byteIdx)));
-			}
         }
         if (must_be_one_of_likely_formats) {
             return ImageInfo(kUnrecognizedFormat);
@@ -1208,6 +1204,12 @@ inline ImageInfo parse(ReadInterface &ri,                               //
 
     for (auto &d : dl) {
         auto format = std::get<0>(d) - 1;
+		const auto &detectorAndOrigin = std::get<1>(dl[format]);
+		{
+			Format origin = std::get<1>(detectorAndOrigin);
+			if(origin != Format::kFormatUnknown)
+				format = Format(origin - 1);
+		}
 		auto byteIdx = format / 8;
 		auto bitFlag = (1 << (format - (8 * byteIdx)));
 		auto &byteMask = tried[byteIdx];
@@ -1215,18 +1217,10 @@ inline ImageInfo parse(ReadInterface &ri,                               //
 			continue;
 		}
 		byteMask |= bitFlag;
-		const auto &detectorAndDependant = std::get<1>(dl[format]);
-		const auto &detector = std::get<0>(detectorAndDependant);
+		const auto &detector = std::get<0>(detectorAndOrigin);
         if (detector(ri, length, info)) {
             return info;
         }
-		format = std::get<1>(detectorAndDependant);
-		if(format != Format::kFormatUnknown)
-		{
-			format = Format(format - 1);
-			byteIdx = format / 8;
-			tried[byteIdx] |= (1 << (format - (8 * byteIdx)));
-		}
     }
 
     return ImageInfo(kUnrecognizedFormat);
