@@ -1147,7 +1147,7 @@ inline ImageInfo parse(ReadInterface &ri,                               //
 	};
 	constexpr size_t
 		dl_len = std::size(dl),
-		byteFlagsNeeded = dl_len / 8 + ((dl_len % 8) ? 1 : 0);
+		byteFlagsNeeded = dl_len / 8 + ((dl_len % 8) > 0 ? 1 : 0);
 
 	static_assert(dl_len == Format::FORMAT_COUNT, "Inconsistent list of imageinfo detectors, dl != Format");
 
