@@ -27,6 +27,9 @@
 //
 
 #pragma once
+#include <cstddef>
+#include <cstdint>
+#include <iterator>
 #ifndef IMAGEINFO_IMAGEINFO_H
 #define IMAGEINFO_IMAGEINFO_H
 
@@ -93,6 +96,9 @@ enum Format {
     kFormatTga,
     kFormatTiff,
     kFormatWebp,
+
+	_END,
+	FORMAT_COUNT = _END - 1, // not counting Format::kFormatUnknown
 };
 
 enum Error {
@@ -1114,47 +1120,48 @@ inline bool try_tga(ReadInterface &ri, size_t length, ImageInfo &info) {
 
 using Detector = bool (*)(ReadInterface &ri, size_t length, ImageInfo &info);
 
+inline constexpr std::tuple<Format, Detector> dl[] = {
+	{kFormatAvif, try_avif_heic},
+	{ kFormatBmp,       try_bmp},
+	{ kFormatCur,   try_cur_ico},
+	{ kFormatDds,       try_dds},
+	{ kFormatGif,       try_gif},
+	{ kFormatHdr,       try_hdr},
+	{kFormatHeic, try_avif_heic},
+	{kFormatIcns,      try_icns},
+	{ kFormatIco,   try_cur_ico},
+	{ kFormatJp2,   try_jp2_jpx},
+	{kFormatJpeg,       try_jpg},
+	{ kFormatJpx,   try_jp2_jpx},
+	{ kFormatKtx,       try_ktx},
+	{ kFormatPng,       try_png},
+	{ kFormatPsd,       try_psd},
+	{ kFormatQoi,       try_qoi},
+	{ kFormatTga,       try_tga},
+	{kFormatTiff,      try_tiff},
+	{kFormatWebp,      try_webp},
+};
+inline constexpr size_t
+	dl_len = std::size(dl),
+	byteFlagsNeeded = dl_len / 8 + ((dl_len % 8) ? 1 : 0);
+
+static_assert(dl_len == Format::FORMAT_COUNT, "Inconsistent list of imageinfo detectors, dl != Format");
+
 inline ImageInfo parse(ReadInterface &ri,                               //
                        Format most_likely_format,                       //
                        const std::vector<Format> &likely_formats = {},  //
                        bool must_be_one_of_likely_formats = false) {    //
     size_t length = ri.length();
 
-    std::vector<std::tuple<Format, Detector>> dl = {
-        {kFormatAvif, try_avif_heic},
-        {kFormatHeic, try_avif_heic},
-        { kFormatBmp,       try_bmp},
-        { kFormatCur,   try_cur_ico},
-        { kFormatIco,   try_cur_ico},
-        { kFormatDds,       try_dds},
-        { kFormatGif,       try_gif},
-        { kFormatHdr,       try_hdr},
-        {kFormatIcns,      try_icns},
-        { kFormatJp2,   try_jp2_jpx},
-        { kFormatJpx,   try_jp2_jpx},
-        {kFormatJpeg,       try_jpg},
-        { kFormatKtx,       try_ktx},
-        { kFormatPng,       try_png},
-        { kFormatPsd,       try_psd},
-        { kFormatQoi,       try_qoi},
-        {kFormatTiff,      try_tiff},
-        {kFormatWebp,      try_webp},
-        { kFormatTga,       try_tga},
-    };
-
-    std::unordered_map<int, Detector> dm;
-    dm.reserve(dl.size());
-    for (auto &d : dl) {
-        dm[std::get<0>(d)] = std::get<1>(d);
-    }
-
-    std::unordered_set<Detector> tried;
+	uint8_t tried[byteFlagsNeeded] = { 0 };
 
     ImageInfo info;
 
     if (most_likely_format != Format::kFormatUnknown) {
-        auto &detector = dm[most_likely_format];
-        tried.insert(detector);
+		most_likely_format = Format(most_likely_format - 1);
+		auto byteIdx = most_likely_format / 8;
+		tried[byteIdx] |= (1 << (most_likely_format - (8 * byteIdx)));
+        auto &detector = std::get<1>(dl[most_likely_format]);
         if (detector(ri, length, info)) {
             return info;
         }
@@ -1162,11 +1169,18 @@ inline ImageInfo parse(ReadInterface &ri,                               //
 
     if (!likely_formats.empty()) {
         for (auto format : likely_formats) {
-            auto &detector = dm[format];
-            if (tried.find(detector) != tried.end()) {
+			if(format == Format::kFormatUnknown) {
+				continue;
+			}
+			format = Format(format - 1);
+			auto byteIdx = format / 8;
+			auto bitFlag = (1 << (format - (8 * byteIdx)));
+			auto &byteMask = tried[byteIdx];
+			if(byteMask & bitFlag) {
                 continue;
             }
-            tried.insert(detector);
+			byteMask |= bitFlag;
+			auto &detector = std::get<1>(dl[format]);
             if (detector(ri, length, info)) {
                 return info;
             }
@@ -1177,12 +1191,15 @@ inline ImageInfo parse(ReadInterface &ri,                               //
     }
 
     for (auto &d : dl) {
-        // auto &format = std::get<0>(d);
+        auto format = std::get<0>(d) - 1;
+		auto byteIdx = format / 8;
+		auto bitFlag = (1 << (format - (8 * byteIdx)));
+		auto &byteMask = tried[byteIdx];
+		if(byteMask & bitFlag) {
+			continue;
+		}
+		byteMask |= bitFlag;
         auto &detector = std::get<1>(d);
-        if (tried.find(detector) != tried.end()) {
-            continue;
-        }
-        tried.insert(detector);
         if (detector(ri, length, info)) {
             return info;
         }
