@@ -645,14 +645,19 @@ inline bool try_hdr(ReadInterface &ri, size_t length, ImageInfo &info) {
     if (length < 6) {
         return false;
     }
-
+    off_t offset = 6;
     auto buffer = ri.read_buffer(0, 6);
-    auto buffer2 = ri.read_buffer(0, 10);
-    if (!buffer.cmp_any_of(0, 6, {"#?RGBE", "#?XYZE"}) && !buffer2.cmp(0, 10, "#?RADIANCE")) {
-        return false;
+    if (!buffer.cmp_any_of(0, 6, {"#?RGBE", "#?XYZE"})) {
+        if (length < 10) {
+            return false;
+        }
+        offset = 10;
+        buffer = ri.read_buffer(0, 10);
+        if (!buffer.cmp(0, 10, "#?RADIANCE")) {
+            return false;
+        }
     }
 
-    off_t offset = 6;
     const size_t piece = 64;
     std::string header;
     static const std::regex x_pattern(R"(\s[+-]X\s(\d+)\s)");
