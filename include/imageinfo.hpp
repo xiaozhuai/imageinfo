@@ -27,18 +27,18 @@
 //
 
 #pragma once
-#include <cstddef>
-#include <cstdint>
-#include <iterator>
 #ifndef IMAGEINFO_IMAGEINFO_H
 #define IMAGEINFO_IMAGEINFO_H
 
 #include <algorithm>
 #include <array>
 #include <cassert>
+#include <cstddef>
+#include <cstdint>
 #include <cstdio>
 #include <fstream>
 #include <functional>
+#include <iterator>
 #include <regex>
 #include <set>
 #include <string>
