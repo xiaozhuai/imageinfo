@@ -1109,10 +1109,10 @@ inline bool try_tga(ReadInterface &ri, size_t length, ImageInfo &info) {
 
 using Detector = bool (*)(ReadInterface &ri, size_t length, ImageInfo &info);
 
-inline ImageInfo parse(ReadInterface &ri,                              //
-                       Format very_likely_format,                      //
-                       const std::vector<Format> &likely_formats = {}, //
-                       bool must_be_one_of_likely_formats = false) {   //
+inline ImageInfo parse(ReadInterface &ri,                               //
+                       Format very_likely_format,                       //
+                       const std::vector<Format> &likely_formats = {},  //
+                       bool must_be_one_of_likely_formats = false) {    //
     size_t length = ri.length();
 
     std::vector<std::tuple<Format, Detector>> dl = {
@@ -1147,8 +1147,7 @@ inline ImageInfo parse(ReadInterface &ri,                              //
 
     ImageInfo info;
 
-    if(very_likely_format != Format::kFormatUnknown)
-    {
+    if (very_likely_format != Format::kFormatUnknown) {
         auto &detector = dm[very_likely_format];
         tried.insert(detector);
         if (detector(ri, length, info)) {
@@ -1187,17 +1186,17 @@ inline ImageInfo parse(ReadInterface &ri,                              //
     return ImageInfo(kUnrecognizedFormat);
 }
 
-inline ImageInfo parse(ReadInterface &ri,                              //
-                       const std::vector<Format> &likely_formats = {}, //
-                       bool must_be_one_of_likely_formats = false) {   //
+inline ImageInfo parse(ReadInterface &ri,                               //
+                       const std::vector<Format> &likely_formats = {},  //
+                       bool must_be_one_of_likely_formats = false) {    //
     return parse(ri, Format::kFormatUnknown, likely_formats, must_be_one_of_likely_formats);
 }
 
 template <typename ReaderType, typename InputType>
-inline ImageInfo parse(const InputType &input,                         //
-                       Format very_likely_format,                      //
-                       const std::vector<Format> &likely_formats = {}, //
-                       bool must_be_one_of_likely_formats = false) {   //
+inline ImageInfo parse(const InputType &input,                          //
+                       Format very_likely_format,                       //
+                       const std::vector<Format> &likely_formats = {},  //
+                       bool must_be_one_of_likely_formats = false) {    //
     ReaderType reader(input);
     size_t length = reader.size();
     ReadFunc read_func = [&reader](void *buf, off_t offset, size_t size) { reader.read(buf, offset, size); };
@@ -1206,9 +1205,9 @@ inline ImageInfo parse(const InputType &input,                         //
 }
 
 template <typename ReaderType, typename InputType>
-inline ImageInfo parse(const InputType &input,                         //
-                       const std::vector<Format> &likely_formats = {}, //
-                       bool must_be_one_of_likely_formats = false) {   //
+inline ImageInfo parse(const InputType &input,                          //
+                       const std::vector<Format> &likely_formats = {},  //
+                       bool must_be_one_of_likely_formats = false) {    //
     return parse<ReaderType>(input, Format::kFormatUnknown, likely_formats, must_be_one_of_likely_formats);
 }
 
