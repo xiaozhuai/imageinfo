@@ -1149,22 +1149,21 @@ struct DetectorInfo {
     Detector detect;
 };
 
-template <size_t N>
+template <size_t N, int I = N - 1>
 struct check_format_order_ {
-    template <int I>
-    constexpr static bool check(const DetectorInfo (&dl)[N]) {
-        return dl[I].format == (Format)(I + 1) && check<I - 1>(dl);
-    }
-
-    template <>
-    constexpr static bool check<0>(const DetectorInfo (&dl)[N]) {
-        return dl[0].format == (Format)(0 + 1);
+    static constexpr bool check(const DetectorInfo (&dl)[N]) {
+        return (dl[I].format == static_cast<Format>(I + 1)) && check_format_order_<N, I - 1>::check(dl);
     }
 };
 
 template <size_t N>
+struct check_format_order_<N, 0> {
+    static constexpr bool check(const DetectorInfo (&dl)[N]) { return dl[0].format == static_cast<Format>(0 + 1); }
+};
+
+template <size_t N>
 constexpr bool check_format_order(const DetectorInfo (&dl)[N]) {
-    return check_format_order_<N>::template check<N - 1>(dl);
+    return check_format_order_<N>::check(dl);
 }
 
 inline ImageInfo parse(ReadInterface &ri,                               //
