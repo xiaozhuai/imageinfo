@@ -1149,6 +1149,24 @@ struct DetectorInfo {
     Detector detect;
 };
 
+template <size_t N>
+struct check_format_order_ {
+    template <size_t I>
+    constexpr static bool check(const DetectorInfo (&dl)[N]) {
+        return dl[I].format == (Format)(I + 1) && check<I - 1>(dl);
+    }
+
+    template <>
+    constexpr static bool check<0>(const DetectorInfo (&dl)[N]) {
+        return dl[0].format == (Format)(0 + 1);
+    }
+};
+
+template <size_t N>
+constexpr bool check_format_order(const DetectorInfo (&dl)[N]) {
+    return check_format_order_<N>::template check<N-1>(dl);
+}
+
 inline ImageInfo parse(ReadInterface &ri,                               //
                        Format most_likely_format,                       //
                        const std::vector<Format> &likely_formats = {},  //
@@ -1177,6 +1195,7 @@ inline ImageInfo parse(ReadInterface &ri,                               //
         { kFormatTga,      kDetectorIndexTga,       try_tga},
     };
     static_assert(FORMAT_COUNT == countof(dl), "FORMAT_COUNT != countof(dl)");
+    static_assert(check_format_order(dl), "Format order is incorrect");
 
     bool tried[DETECTOR_COUNT] = {false};
 
@@ -1185,9 +1204,8 @@ inline ImageInfo parse(ReadInterface &ri,                               //
     if (most_likely_format != Format::kFormatUnknown) {
         auto detector = dl[most_likely_format - 1];
         tried[detector.index] = true;
-        if (detector.detect(ri, length, info) &&
-            (!must_be_one_of_likely_formats ||
-             (must_be_one_of_likely_formats && info.format() == most_likely_format))) {
+        if (detector.detect(ri, length, info)  //
+            && (!must_be_one_of_likely_formats || info.format() == most_likely_format)) {
             return info;
         }
     }
@@ -1202,8 +1220,8 @@ inline ImageInfo parse(ReadInterface &ri,                               //
                 continue;
             }
             tried[detector.index] = true;
-            if (detector.detect(ri, length, info) &&
-                (!must_be_one_of_likely_formats || (must_be_one_of_likely_formats && info.format() == format))) {
+            if (detector.detect(ri, length, info)  //
+                && (!must_be_one_of_likely_formats || info.format() == format)) {
                 return info;
             }
         }
