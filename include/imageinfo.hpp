@@ -1151,7 +1151,7 @@ struct DetectorInfo {
 
 template <size_t N>
 struct check_format_order_ {
-    template <size_t I>
+    template <int I>
     constexpr static bool check(const DetectorInfo (&dl)[N]) {
         return dl[I].format == (Format)(I + 1) && check<I - 1>(dl);
     }
