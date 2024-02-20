@@ -1202,11 +1202,11 @@ inline ImageInfo parse(ReadInterface &ri,                               //
 
     if (most_likely_format != Format::kFormatUnknown) {
         auto detector = dl[most_likely_format - 1];
-        tried[detector.index] = true;
         if (detector.detect(ri, length, info)  //
             && (!must_be_one_of_likely_formats || info.format() == most_likely_format)) {
             return info;
         }
+        tried[detector.index] = true;
     }
 
     if (!likely_formats.empty()) {
@@ -1218,11 +1218,11 @@ inline ImageInfo parse(ReadInterface &ri,                               //
             if (tried[detector.index]) {
                 continue;
             }
-            tried[detector.index] = true;
             if (detector.detect(ri, length, info)  //
                 && (!must_be_one_of_likely_formats || info.format() == format)) {
                 return info;
             }
+            tried[detector.index] = true;
         }
         if (must_be_one_of_likely_formats) {
             return ImageInfo(kUnrecognizedFormat);
@@ -1233,10 +1233,10 @@ inline ImageInfo parse(ReadInterface &ri,                               //
         if (tried[detector.index]) {
             continue;
         }
-        tried[detector.index] = true;
         if (detector.detect(ri, length, info)) {
             return info;
         }
+        tried[detector.index] = true;
     }
 
     return ImageInfo(kUnrecognizedFormat);
