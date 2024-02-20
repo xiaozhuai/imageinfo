@@ -1164,7 +1164,7 @@ struct check_format_order_ {
 
 template <size_t N>
 constexpr bool check_format_order(const DetectorInfo (&dl)[N]) {
-    return check_format_order_<N>::template check<N-1>(dl);
+    return check_format_order_<N>::template check<N - 1>(dl);
 }
 
 inline ImageInfo parse(ReadInterface &ri,                               //
