@@ -90,9 +90,12 @@ enum Format {
     kFormatPng,
     kFormatPsd,
     kFormatQoi,
-    kFormatTga,
     kFormatTiff,
     kFormatWebp,
+    kFormatTga,
+    //
+    FORMAT_END,
+    FORMAT_COUNT = FORMAT_END - 1,
 };
 
 enum Error {
@@ -1112,7 +1115,56 @@ inline bool try_tga(ReadInterface &ri, size_t length, ImageInfo &info) {
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+enum DetectorIndex {
+    kDetectorIndexAvifHeic = 0,
+    kDetectorIndexBmp,
+    kDetectorIndexCurIco,
+    kDetectorIndexDds,
+    kDetectorIndexGif,
+    kDetectorIndexHdr,
+    kDetectorIndexIcns,
+    kDetectorIndexJp2Jpx,
+    kDetectorIndexJpg,
+    kDetectorIndexKtx,
+    kDetectorIndexPng,
+    kDetectorIndexPsd,
+    kDetectorIndexQoi,
+    kDetectorIndexTiff,
+    kDetectorIndexWebp,
+    kDetectorIndexTga,
+    //
+    DETECTOR_COUNT
+};
+
 using Detector = bool (*)(ReadInterface &ri, size_t length, ImageInfo &info);
+
+template <typename T, size_t N>
+inline constexpr size_t countof(T (&)[N]) noexcept {
+    return N;
+}
+
+struct DetectorInfo {
+    Format format;
+    DetectorIndex index;
+    Detector detect;
+};
+
+template <size_t N, int I = N - 1>
+struct check_format_order_ {
+    static constexpr bool check(const DetectorInfo (&dl)[N]) {
+        return (dl[I].format == static_cast<Format>(I + 1)) && check_format_order_<N, I - 1>::check(dl);
+    }
+};
+
+template <size_t N>
+struct check_format_order_<N, 0> {
+    static constexpr bool check(const DetectorInfo (&dl)[N]) { return dl[0].format == static_cast<Format>(0 + 1); }
+};
+
+template <size_t N>
+constexpr bool check_format_order(const DetectorInfo (&dl)[N]) {
+    return check_format_order_<N>::check(dl);
+}
 
 inline ImageInfo parse(ReadInterface &ri,                               //
                        Format most_likely_format,                       //
@@ -1120,72 +1172,70 @@ inline ImageInfo parse(ReadInterface &ri,                               //
                        bool must_be_one_of_likely_formats = false) {    //
     size_t length = ri.length();
 
-    std::vector<std::tuple<Format, Detector>> dl = {
-        {kFormatAvif, try_avif_heic},
-        {kFormatHeic, try_avif_heic},
-        { kFormatBmp,       try_bmp},
-        { kFormatCur,   try_cur_ico},
-        { kFormatIco,   try_cur_ico},
-        { kFormatDds,       try_dds},
-        { kFormatGif,       try_gif},
-        { kFormatHdr,       try_hdr},
-        {kFormatIcns,      try_icns},
-        { kFormatJp2,   try_jp2_jpx},
-        { kFormatJpx,   try_jp2_jpx},
-        {kFormatJpeg,       try_jpg},
-        { kFormatKtx,       try_ktx},
-        { kFormatPng,       try_png},
-        { kFormatPsd,       try_psd},
-        { kFormatQoi,       try_qoi},
-        {kFormatTiff,      try_tiff},
-        {kFormatWebp,      try_webp},
-        { kFormatTga,       try_tga},
+    constexpr DetectorInfo dl[] = {
+        {kFormatAvif, kDetectorIndexAvifHeic, try_avif_heic},
+        { kFormatBmp,      kDetectorIndexBmp,       try_bmp},
+        { kFormatCur,   kDetectorIndexCurIco,   try_cur_ico},
+        { kFormatDds,      kDetectorIndexDds,       try_dds},
+        { kFormatGif,      kDetectorIndexGif,       try_gif},
+        { kFormatHdr,      kDetectorIndexHdr,       try_hdr},
+        {kFormatHeic, kDetectorIndexAvifHeic, try_avif_heic},
+        {kFormatIcns,     kDetectorIndexIcns,      try_icns},
+        { kFormatIco,   kDetectorIndexCurIco,   try_cur_ico},
+        { kFormatJp2,   kDetectorIndexJp2Jpx,   try_jp2_jpx},
+        {kFormatJpeg,      kDetectorIndexJpg,       try_jpg},
+        { kFormatJpx,   kDetectorIndexJp2Jpx,   try_jp2_jpx},
+        { kFormatKtx,      kDetectorIndexKtx,       try_ktx},
+        { kFormatPng,      kDetectorIndexPng,       try_png},
+        { kFormatPsd,      kDetectorIndexPsd,       try_psd},
+        { kFormatQoi,      kDetectorIndexQoi,       try_qoi},
+        {kFormatTiff,     kDetectorIndexTiff,      try_tiff},
+        {kFormatWebp,     kDetectorIndexWebp,      try_webp},
+        { kFormatTga,      kDetectorIndexTga,       try_tga},
     };
+    static_assert(FORMAT_COUNT == countof(dl), "FORMAT_COUNT != countof(dl)");
+    static_assert(check_format_order(dl), "Format order is incorrect");
 
-    std::unordered_map<int, Detector> dm;
-    dm.reserve(dl.size());
-    for (auto &d : dl) {
-        dm[std::get<0>(d)] = std::get<1>(d);
-    }
-
-    std::unordered_set<Detector> tried;
+    bool tried[DETECTOR_COUNT] = {false};
 
     ImageInfo info;
 
     if (most_likely_format != Format::kFormatUnknown) {
-        auto &detector = dm[most_likely_format];
-        tried.insert(detector);
-        if (detector(ri, length, info)) {
+        auto detector = dl[most_likely_format - 1];
+        if (detector.detect(ri, length, info)  //
+            && (!must_be_one_of_likely_formats || info.format() == most_likely_format)) {
             return info;
         }
+        tried[detector.index] = true;
     }
 
-    if (!likely_formats.empty()) {
-        for (auto format : likely_formats) {
-            auto &detector = dm[format];
-            if (tried.find(detector) != tried.end()) {
-                continue;
-            }
-            tried.insert(detector);
-            if (detector(ri, length, info)) {
-                return info;
-            }
-        }
-        if (must_be_one_of_likely_formats) {
-            return ImageInfo(kUnrecognizedFormat);
-        }
-    }
-
-    for (auto &d : dl) {
-        // auto &format = std::get<0>(d);
-        auto &detector = std::get<1>(d);
-        if (tried.find(detector) != tried.end()) {
+    for (auto format : likely_formats) {
+        if (format == Format::kFormatUnknown) {
             continue;
         }
-        tried.insert(detector);
-        if (detector(ri, length, info)) {
+        auto detector = dl[format - 1];
+        if (tried[detector.index]) {
+            continue;
+        }
+        if (detector.detect(ri, length, info)  //
+            && (!must_be_one_of_likely_formats || info.format() == format)) {
             return info;
         }
+        tried[detector.index] = true;
+    }
+
+    if (must_be_one_of_likely_formats) {
+        return ImageInfo(kUnrecognizedFormat);
+    }
+
+    for (auto &detector : dl) {
+        if (tried[detector.index]) {
+            continue;
+        }
+        if (detector.detect(ri, length, info)) {
+            return info;
+        }
+        tried[detector.index] = true;
     }
 
     return ImageInfo(kUnrecognizedFormat);
