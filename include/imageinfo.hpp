@@ -1209,24 +1209,23 @@ inline ImageInfo parse(ReadInterface &ri,                               //
         tried[detector.index] = true;
     }
 
-    if (!likely_formats.empty()) {
-        for (auto format : likely_formats) {
-            if (format == Format::kFormatUnknown) {
-                continue;
-            }
-            auto detector = dl[format - 1];
-            if (tried[detector.index]) {
-                continue;
-            }
-            if (detector.detect(ri, length, info)  //
-                && (!must_be_one_of_likely_formats || info.format() == format)) {
-                return info;
-            }
-            tried[detector.index] = true;
+    for (auto format : likely_formats) {
+        if (format == Format::kFormatUnknown) {
+            continue;
         }
-        if (must_be_one_of_likely_formats) {
-            return ImageInfo(kUnrecognizedFormat);
+        auto detector = dl[format - 1];
+        if (tried[detector.index]) {
+            continue;
         }
+        if (detector.detect(ri, length, info)  //
+            && (!must_be_one_of_likely_formats || info.format() == format)) {
+            return info;
+        }
+        tried[detector.index] = true;
+    }
+
+    if (must_be_one_of_likely_formats) {
+        return ImageInfo(kUnrecognizedFormat);
     }
 
     for (auto &detector : dl) {
