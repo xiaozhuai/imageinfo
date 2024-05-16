@@ -8,21 +8,17 @@ on:
 
 jobs:
     code-style:
-        runs-on: ubuntu-22.04
+        runs-on: ubuntu-24.04
         steps:
             -   name: Checkout
                 uses: actions/checkout@v4
                 with:
                     submodules: recursive
-            -   name: Install clang-format-17
+            -   name: Install clang-format-18
                 run: |
-                    sudo apt-get autoremove --purge clang-format*
-                    wget -qO- https://apt.llvm.org/llvm-snapshot.gpg.key | sudo tee /etc/apt/trusted.gpg.d/apt.llvm.org.asc
-                    echo "deb https://apt.llvm.org/jammy/ llvm-toolchain-jammy-17 main" | sudo tee -a /etc/apt/sources.list
-                    echo "deb-src https://apt.llvm.org/jammy/ llvm-toolchain-jammy-17 main" | sudo tee -a /etc/apt/sources.list
                     sudo apt-get update
-                    sudo apt-get install clang-format-17
-                    sudo ln -s -f /usr/bin/clang-format-17 /usr/bin/clang-format
+                    sudo apt-get install clang-format-18
+                    sudo ln -s -f /usr/bin/clang-format-18 /usr/bin/clang-format
                     clang-format --version
             -   name: Check code style
                 run: |
@@ -66,9 +62,9 @@ jobs:
         strategy:
             matrix:
                 runner:
-                    - macos-11
                     - macos-12
                     - macos-13
+                    - macos-14
                 arch:
                     - x86_64
                     - arm64
@@ -82,7 +78,7 @@ jobs:
                     cmake -DCMAKE_OSX_ARCHITECTURES=${{matrix.arch}} -B build .
                     cmake --build build -- all
             -   name: Test
-                if: ${{ matrix.arch != 'arm64' }}
+                if: ${{ matrix.runner == 'macos-14' || matrix.arch != 'arm64' }}
                 run: |
                     cmake --build build -- check
 
@@ -94,6 +90,7 @@ jobs:
                 runner:
                     - ubuntu-20.04
                     - ubuntu-22.04
+                    - ubuntu-24.04
         steps:
             -   name: Checkout
                 uses: actions/checkout@v4
