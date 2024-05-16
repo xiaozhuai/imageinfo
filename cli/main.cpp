@@ -1,3 +1,4 @@
+#include <cinttypes>
 #include <cstdio>
 
 #include "imageinfo.hpp"
@@ -18,12 +19,12 @@ int main(int argc, char **argv) {
             printf("  - Format   : %d\n", info.format());
             printf("  - Ext      : %s\n", info.ext());
             printf("  - Full Ext : %s\n", info.full_ext());
-            printf("  - Size     : {width: %lld, height: %lld}\n", info.size().width, info.size().height);
+            printf("  - Size     : {width: %" PRId64 ", height: %" PRId64 "}\n", info.size().width, info.size().height);
             printf("  - Mimetype : %s\n", info.mimetype());
             if (!info.entry_sizes().empty()) {
                 printf("  - Entries  :\n");
-                for (const auto &entrySize : info.entry_sizes()) {
-                    printf("    - {width: %lld, height: %lld}\n", entrySize[0], entrySize[1]);
+                for (const auto &size : info.entry_sizes()) {
+                    printf("    - {width: %" PRId64 ", height: %" PRId64 "}\n", size.width, size.height);
                 }
             }
         }
