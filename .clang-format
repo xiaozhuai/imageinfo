@@ -1,11 +1,11 @@
 BasedOnStyle: 'Google'
 
 AlignConsecutiveMacros:
-    Enabled:         true
-    AcrossEmptyLines: true
-    AcrossComments:  true
-    AlignCompound:   false
-    PadOperators:    false
+  Enabled:         true
+  AcrossEmptyLines: true
+  AcrossComments:  true
+  AlignCompound:   false
+  PadOperators:    false
 AccessModifierOffset: -4
 #AlignAfterOpenBracket: AlwaysBreak
 AlignArrayOfStructures: Right
@@ -17,6 +17,9 @@ JavaScriptQuotes: Single
 NamespaceIndentation: None
 ObjCBlockIndentWidth: 4
 PointerAlignment: Right
+DerivePointerAlignment: false
 SpaceBeforeRangeBasedForLoopColon: true
 SpacesInContainerLiterals: false
 InsertNewlineAtEOF: true
+UseTab: Never
+LineEnding: LF
