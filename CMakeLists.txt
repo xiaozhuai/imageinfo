@@ -71,12 +71,12 @@ if (IMAGEINFO_IS_MASTER_PROJECT)
         set(ALL_SOURCES include/imageinfo.hpp cli/main.cpp tests/tests.cpp)
         add_custom_target(
                 format
-                COMMAND "${CLANG_FORMAT}" -i -verbose ${ALL_SOURCES}
+                COMMAND "${CLANG_FORMAT}" -i --verbose ${ALL_SOURCES}
                 WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
         )
         add_custom_target(
                 check-format
-                COMMAND "${CLANG_FORMAT}" --dry-run --Werror ${ALL_SOURCES}
+                COMMAND "${CLANG_FORMAT}" --dry-run --Werror --verbose ${ALL_SOURCES}
                 WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
         )
     endif ()
