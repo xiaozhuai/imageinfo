@@ -38,7 +38,7 @@
 #include <cstring>
 #include <fstream>
 #include <functional>
-#include <regex>
+#include <memory>
 #include <set>
 #include <string>
 #include <tuple>
@@ -650,13 +650,11 @@ inline bool try_hdr(ReadInterface &ri, size_t length, ImageInfo &info) {
     if (length < 6) {
         return false;
     }
-    off_t offset = 6;
     auto buffer = ri.read_buffer(0, 6);
     if (!buffer.cmp_any_of(0, 6, {"#?RGBE", "#?XYZE"})) {
         if (length < 10) {
             return false;
         }
-        offset = 10;
         buffer = ri.read_buffer(0, 10);
         if (!buffer.cmp(0, 10, "#?RADIANCE")) {
             return false;
@@ -665,26 +663,50 @@ inline bool try_hdr(ReadInterface &ri, size_t length, ImageInfo &info) {
 
     const size_t piece = 64;
     std::string header;
-    static const std::regex x_pattern(R"(\s[+-]X\s(\d+)\s)");
-    static const std::regex y_pattern(R"(\s[+-]Y\s(\d+)\s)");
+    size_t resolution_start = 0;
+    std::string resolution;
+    off_t offset = 0;
     while (offset < length) {
         buffer = ri.read_buffer(offset, std::min<size_t>(length - offset, piece));
+        size_t start_pos = buffer.size() - 1;
         offset += (off_t)buffer.size();
         header += buffer.to_string();
-        std::smatch x_results;
-        std::smatch y_results;
-        std::regex_search(header, x_results, x_pattern);
-        std::regex_search(header, y_results, y_pattern);
-        if (x_results.size() >= 2 && y_results.size() >= 2) {
-            info = ImageInfo(kFormatHdr, "hdr", "hdr", "image/vnd.radiance");
-            info.set_size(                    //
-                std::stol(x_results.str(1)),  //
-                std::stol(y_results.str(1))   //
-            );
-            return true;
+        if (resolution_start == 0) {
+            auto pos = header.find("\n\n", start_pos);
+            if (pos == std::string::npos) {
+                continue;
+            }
+            resolution_start = pos + 2;
+        }
+        auto pos = header.find('\n', resolution_start);
+        if (pos != std::string::npos) {
+            resolution = header.substr(resolution_start, pos - resolution_start);
+            break;
         }
     }
-    return false;
+    if (resolution.empty()) {
+        return false;
+    }
+    auto p0 = resolution.find(' ');
+    if (p0 == std::string::npos) {
+        return false;
+    }
+    auto p1 = resolution.find(' ', p0 + 1);
+    if (p1 == std::string::npos) {
+        return false;
+    }
+    auto p2 = resolution.find(' ', p1 + 1);
+    if (p2 == std::string::npos) {
+        return false;
+    }
+    auto y_str = resolution.substr(p0 + 1, p1 - p0 - 1);
+    auto x_str = resolution.substr(p2 + 1);
+    info = ImageInfo(kFormatHdr, "hdr", "hdr", "image/vnd.radiance");
+    info.set_size(         //
+        std::stol(x_str),  //
+        std::stol(y_str)   //
+    );
+    return true;
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
