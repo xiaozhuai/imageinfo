@@ -430,6 +430,10 @@ private:
     Error error_ = kNoError;
 };
 
+inline bool is_numeric(const std::string &str) {
+    return !str.empty() && std::all_of(str.begin(), str.end(), ::isdigit);
+}
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 // https://nokiatech.github.io/heif/technical.html
@@ -642,9 +646,7 @@ inline bool try_gif(ReadInterface &ri, size_t length, ImageInfo &info) {
     );
     return true;
 }
-inline bool is_numeric(const std::string& str) {
-    return !str.empty() && std::all_of(str.begin(), str.end(), ::isdigit);
-}
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 // http://paulbourke.net/dataformats/pic/
@@ -703,8 +705,7 @@ inline bool try_hdr(ReadInterface &ri, size_t length, ImageInfo &info) {
     }
     auto y_str = resolution.substr(p0 + 1, p1 - p0 - 1);
     auto x_str = resolution.substr(p2 + 1);
-    if( !is_numeric(x_str) || !is_numeric(y_str))
-        return false;
+    if (!is_numeric(x_str) || !is_numeric(y_str)) return false;
     info = ImageInfo(kFormatHdr, "hdr", "hdr", "image/vnd.radiance");
     info.set_size(         //
         std::stol(x_str),  //
