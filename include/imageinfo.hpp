@@ -805,9 +805,14 @@ inline bool try_icns(ReadInterface &ri, size_t length, ImageInfo &info) {
         buffer = ri.read_buffer(offset, 8);
         auto type = buffer.read_string(0, 4);
         uint32_t entry_size = buffer.read_u32_be(4);
-        int64_t s = size_map.at(type);
-        entry_sizes.emplace_back(s, s);
-        max_size = (std::max)(max_size, s);
+        auto it = size_map.find(type);
+        if (it != size_map.end()) {
+            int64_t s = it->second;
+            entry_sizes.emplace_back(s, s);
+            max_size = std::max(max_size, s);
+        } else {
+            return false;  
+        }
         offset += entry_size;
     }
 
