@@ -444,15 +444,15 @@ inline bool try_avif_heic(ReadInterface &ri, size_t length, ImageInfo &info) {
     }
     auto buffer = ri.read_buffer(0, 4);
     if (buffer.size() < 4) {
-        return false; 
-    }  
-    uint32_t ftyp_box_length = buffer.read_u32_be(0); 
+        return false;
+    }
+    uint32_t ftyp_box_length = buffer.read_u32_be(0);
     if (ftyp_box_length < 8 || length < ftyp_box_length + 12) {
         return false;
-    }   
+    }
     buffer = ri.read_buffer(0, ftyp_box_length + 12);
     if (buffer.size() < ftyp_box_length + 12) {
-        return false; 
+        return false;
     }
     if (!buffer.cmp(4, 4, "ftyp")) {
         return false;
@@ -474,7 +474,7 @@ inline bool try_avif_heic(ReadInterface &ri, size_t length, ImageInfo &info) {
     std::unordered_set<std::string> compatible_brands;
     for (uint32_t i = 0; i < compatible_brand_size; ++i) {
         if (16 + i * 4 + 4 > buffer.size()) {
-            return false; 
+            return false;
         }
         compatible_brands.insert(buffer.read_string(16 + i * 4, 4));
     }
@@ -488,7 +488,7 @@ inline bool try_avif_heic(ReadInterface &ri, size_t length, ImageInfo &info) {
         return false;
     }
     if (ftyp_box_length + 4 + 4 > buffer.size()) {
-        return false; 
+        return false;
     }
 
     if (!buffer.cmp(ftyp_box_length + 4, 4, "meta")) {
@@ -503,7 +503,7 @@ inline bool try_avif_heic(ReadInterface &ri, size_t length, ImageInfo &info) {
 
     buffer = ri.read_buffer(ftyp_box_length + 12, meta_length);
     if (buffer.size() < meta_length) {
-        return false; 
+        return false;
     }
 
     off_t offset = 0;
@@ -521,11 +521,11 @@ inline bool try_avif_heic(ReadInterface &ri, size_t length, ImageInfo &info) {
      */
     while (offset < end) {
         if (offset + 4 > buffer.size()) {
-            return false; 
+            return false;
         }
         uint32_t box_size = buffer.read_u32_be(offset);
         if (box_size < 8 || offset + box_size > end) {
-            return false; 
+            return false;
         }
         if (buffer.cmp_any_of(offset + 4, 4, {"iprp", "ipco"})) {
             end = offset + box_size;
