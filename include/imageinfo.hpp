@@ -38,6 +38,7 @@
 #include <cstring>
 #include <fstream>
 #include <functional>
+#include <limits>
 #include <memory>
 #include <set>
 #include <string>
