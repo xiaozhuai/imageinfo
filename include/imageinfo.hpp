@@ -448,7 +448,7 @@ inline bool try_avif_heic(ReadInterface &ri, size_t length, ImageInfo &info) {
     }
     uint32_t ftyp_box_length = buffer.read_u32_be(0);
     if (ftyp_box_length > UINT32_MAX - 12) {
-        return false;  
+        return false;
     }
 
     if (ftyp_box_length < 8 || length < ftyp_box_length + 12) {
