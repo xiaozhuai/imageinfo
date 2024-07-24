@@ -322,6 +322,9 @@ public:
 
     inline Buffer read_buffer(off_t offset, size_t size) {
         assert(offset >= 0);
+        if (offset + size > length_) {
+            size = length_ > offset ? length_ - offset : 0;
+        }
         assert(offset + size <= length_);
         Buffer buffer(size);
 #ifndef II_DISABLE_HEADER_CACHE
@@ -811,7 +814,7 @@ inline bool try_icns(ReadInterface &ri, size_t length, ImageInfo &info) {
             entry_sizes.emplace_back(s, s);
             max_size = std::max(max_size, s);
         } else {
-            return false;  
+            return false;
         }
         offset += entry_size;
     }
