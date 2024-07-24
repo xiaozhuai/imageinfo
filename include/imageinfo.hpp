@@ -729,13 +729,21 @@ inline bool try_hdr(ReadInterface &ri, size_t length, ImageInfo &info) {
     }
     auto y_str = resolution.substr(p0 + 1, p1 - p0 - 1);
     auto x_str = resolution.substr(p2 + 1);
-    if (!is_numeric(x_str) || !is_numeric(y_str)) return false;
-    info = ImageInfo(kFormatHdr, "hdr", "hdr", "image/vnd.radiance");
-    info.set_size(         //
-        std::stol(x_str),  //
-        std::stol(y_str)   //
-    );
-    return true;
+    if (!is_numeric(x_str) || !is_numeric(y_str)) {
+        return false;
+    }
+    try {
+        long x = std::stol(x_str);
+        long y = std::stol(y_str);
+        if (x <= 0 || y <= 0) {
+            return false;
+        }
+        info = ImageInfo(kFormatHdr, "hdr", "hdr", "image/vnd.radiance");
+        info.set_size(x, y);
+        return true;
+    } catch (const std::exception &e) {
+        return false;
+    }
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
