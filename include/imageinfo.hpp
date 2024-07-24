@@ -934,17 +934,22 @@ inline bool try_ktx(ReadInterface &ri, size_t length, ImageInfo &info) {
 
 // https://www.fileformat.info/format/png/corion.htm
 inline bool try_png(ReadInterface &ri, size_t length, ImageInfo &info) {
-    if (length < 4) {
+    if (length < 24) {
         return false;
     }
 
     auto buffer = ri.read_buffer(0, std::min<size_t>(length, 40));
-    if (!buffer.cmp(0, 4, "\x89PNG")) {
+
+    if (buffer.size() < 8 || !buffer.cmp(0, 4, "\x89PNG")) {
+        return false;
+    }
+
+    if (buffer.size() < 24) {
         return false;
     }
 
     std::string first_chunk_type = buffer.read_string(12, 4);
-    if (first_chunk_type == "IHDR" && buffer.size() >= 24) {
+    if (first_chunk_type == "IHDR") {
         info = ImageInfo(kFormatPng, "png", "png", "image/png");
         info.set_size(               //
             buffer.read_u32_be(16),  //
@@ -952,7 +957,10 @@ inline bool try_png(ReadInterface &ri, size_t length, ImageInfo &info) {
         );
         return true;
     } else if (first_chunk_type == "CgBI") {
-        if (buffer.read_string(28, 4) == "IHDR" && buffer.size() >= 40) {
+        if (buffer.size() < 40) {
+            return false;
+        }
+        if (buffer.read_string(28, 4) == "IHDR") {
             info = ImageInfo(kFormatPng, "png", "png", "image/png");
             info.set_size(               //
                 buffer.read_u32_be(32),  //
