@@ -322,9 +322,6 @@ public:
 
     inline Buffer read_buffer(off_t offset, size_t size) {
         assert(offset >= 0);
-        if (offset + size > length_) {
-            size = length_ > offset ? length_ - offset : 0;
-        }
         assert(offset + size <= length_);
         Buffer buffer(size);
 #ifndef II_DISABLE_HEADER_CACHE
@@ -446,21 +443,11 @@ inline bool try_avif_heic(ReadInterface &ri, size_t length, ImageInfo &info) {
         return false;
     }
     auto buffer = ri.read_buffer(0, 4);
-    if (buffer.size() < 4) {
-        return false;
-    }
     uint32_t ftyp_box_length = buffer.read_u32_be(0);
-    if (ftyp_box_length > UINT32_MAX - 12) {
-        return false;
-    }
-
-    if (ftyp_box_length < 8 || length < ftyp_box_length + 12) {
+    if (uint64_t(length) < uint64_t(ftyp_box_length) + 12) {
         return false;
     }
     buffer = ri.read_buffer(0, ftyp_box_length + 12);
-    if (buffer.size() < ftyp_box_length + 12) {
-        return false;
-    }
     if (!buffer.cmp(4, 4, "ftyp")) {
         return false;
     }
@@ -477,12 +464,12 @@ inline bool try_avif_heic(ReadInterface &ri, size_t length, ImageInfo &info) {
         return false;
     }
 
+    if (ftyp_box_length < 16 || (ftyp_box_length - 16) % 4 != 0) {
+        return false;
+    }
     uint32_t compatible_brand_size = (ftyp_box_length - 16) / 4;
     std::unordered_set<std::string> compatible_brands;
     for (uint32_t i = 0; i < compatible_brand_size; ++i) {
-        if (16 + i * 4 + 4 > buffer.size()) {
-            return false;
-        }
         compatible_brands.insert(buffer.read_string(16 + i * 4, 4));
     }
 
@@ -494,9 +481,6 @@ inline bool try_avif_heic(ReadInterface &ri, size_t length, ImageInfo &info) {
     } else {
         return false;
     }
-    if (ftyp_box_length + 4 + 4 > buffer.size()) {
-        return false;
-    }
 
     if (!buffer.cmp(ftyp_box_length + 4, 4, "meta")) {
         return false;
@@ -504,17 +488,15 @@ inline bool try_avif_heic(ReadInterface &ri, size_t length, ImageInfo &info) {
 
     uint32_t meta_length = buffer.read_u32_be(ftyp_box_length);
 
-    if (meta_length < 8 || length < ftyp_box_length + 12 + meta_length) {
+    if (uint64_t(length) < uint64_t(ftyp_box_length) + 12 + uint64_t(meta_length)) {
         return false;
     }
 
     buffer = ri.read_buffer(ftyp_box_length + 12, meta_length);
-    if (buffer.size() < meta_length) {
-        return false;
-    }
 
     off_t offset = 0;
     off_t end = meta_length;
+
     /**
      * find ispe box
      *
@@ -527,9 +509,6 @@ inline bool try_avif_heic(ReadInterface &ri, size_t length, ImageInfo &info) {
      *           - ispe
      */
     while (offset < end) {
-        if (offset + 4 > buffer.size()) {
-            return false;
-        }
         uint32_t box_size = buffer.read_u32_be(offset);
         if (box_size < 8 || offset + box_size > end) {
             return false;
@@ -735,18 +714,35 @@ inline bool try_hdr(ReadInterface &ri, size_t length, ImageInfo &info) {
     if (!is_numeric(x_str) || !is_numeric(y_str)) {
         return false;
     }
-    try {
-        long x = std::stol(x_str);
-        long y = std::stol(y_str);
-        if (x <= 0 || y <= 0) {
+    auto safe_stou32 = [](const std::string &str, uint32_t &result) {
+        if (str.empty()) {
             return false;
         }
-        info = ImageInfo(kFormatHdr, "hdr", "hdr", "image/vnd.radiance");
-        info.set_size(x, y);
+        result = 0;
+        uint32_t limit = std::numeric_limits<uint32_t>::max() / 10;
+        uint32_t limit_mod = std::numeric_limits<uint32_t>::max() % 10;
+        for (char c : str) {
+            if (c < '0' || c > '9') {
+                return false;
+            }
+            int digit = c - '0';
+            if (result > limit || (result == limit && digit > limit_mod)) {
+                return false;
+            }
+            result = result * 10 + digit;
+        }
         return true;
-    } catch (const std::exception &e) {
+    };
+    uint32_t x, y;
+    if (!safe_stou32(x_str, x) || !safe_stou32(y_str, y)) {
         return false;
     }
+    if (x == 0 || y == 0) {
+        return false;
+    }
+    info = ImageInfo(kFormatHdr, "hdr", "hdr", "image/vnd.radiance");
+    info.set_size(x, y);
+    return true;
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -955,12 +951,7 @@ inline bool try_png(ReadInterface &ri, size_t length, ImageInfo &info) {
     }
 
     auto buffer = ri.read_buffer(0, std::min<size_t>(length, 40));
-
-    if (buffer.size() < 8 || !buffer.cmp(0, 4, "\x89PNG")) {
-        return false;
-    }
-
-    if (buffer.size() < 24) {
+    if (!buffer.cmp(0, 4, "\x89PNG")) {
         return false;
     }
 
@@ -973,10 +964,7 @@ inline bool try_png(ReadInterface &ri, size_t length, ImageInfo &info) {
         );
         return true;
     } else if (first_chunk_type == "CgBI") {
-        if (buffer.size() < 40) {
-            return false;
-        }
-        if (buffer.read_string(28, 4) == "IHDR") {
+        if (buffer.size() >= 40 && buffer.read_string(28, 4) == "IHDR") {
             info = ImageInfo(kFormatPng, "png", "png", "image/png");
             info.set_size(               //
                 buffer.read_u32_be(32),  //
@@ -1042,14 +1030,11 @@ inline bool try_tiff(ReadInterface &ri, size_t length, ImageInfo &info) {
     bool swap_endian = buffer[0] == 0x4D;
 
     auto offset = buffer.read_int<uint32_t>(4, swap_endian);
-    if (offset >= length || length < offset + 2) {
+    if (uint64_t(length) < uint64_t(offset) + 2) {
         return false;
     }
 
     buffer = ri.read_buffer(offset, 2);
-    if (buffer.size() < 2) {
-        return false;
-    }
 
     auto num_entry = buffer.read_int<uint16_t>(0, swap_endian);
     offset += 2;
@@ -1061,9 +1046,6 @@ inline bool try_tiff(ReadInterface &ri, size_t length, ImageInfo &info) {
             return false;
         }
         buffer = ri.read_buffer(offset, 12);
-        if (buffer.size() < 12) {
-            return false;
-        }
 
         auto tag = buffer.read_int<uint16_t>(0, swap_endian);
         auto type = buffer.read_int<uint16_t>(2, swap_endian);
@@ -1352,7 +1334,7 @@ inline ImageInfo parse(const InputType &input,                          //
     return parse<ReaderType>(input, Format::kFormatUnknown, likely_formats, must_be_one_of_likely_formats);
 }
 
-};  // namespace imageinfo
+}  // namespace imageinfo
 
 #ifdef __clang__
 #pragma clang diagnostic pop
