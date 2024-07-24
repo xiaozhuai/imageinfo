@@ -1042,11 +1042,14 @@ inline bool try_tiff(ReadInterface &ri, size_t length, ImageInfo &info) {
     bool swap_endian = buffer[0] == 0x4D;
 
     auto offset = buffer.read_int<uint32_t>(4, swap_endian);
-    if (length < offset + 2) {
+    if (offset >= length || length < offset + 2) {
         return false;
     }
 
     buffer = ri.read_buffer(offset, 2);
+    if (buffer.size() < 2) {
+        return false;
+    }
 
     auto num_entry = buffer.read_int<uint16_t>(0, swap_endian);
     offset += 2;
@@ -1054,7 +1057,13 @@ inline bool try_tiff(ReadInterface &ri, size_t length, ImageInfo &info) {
     int64_t width = -1;
     int64_t height = -1;
     for (uint16_t i = 0; i < num_entry && length >= offset + 12 && (width == -1 || height == -1); ++i, offset += 12) {
+        if (offset + 12 > length) {
+            return false;
+        }
         buffer = ri.read_buffer(offset, 12);
+        if (buffer.size() < 12) {
+            return false;
+        }
 
         auto tag = buffer.read_int<uint16_t>(0, swap_endian);
         auto type = buffer.read_int<uint16_t>(2, swap_endian);
