@@ -510,11 +510,8 @@ inline bool try_avif_heic(ReadInterface &ri, size_t length, ImageInfo &info) {
      *           - ispe
      */
     while (offset < end) {
-        if (offset + 8 > end) {
-            return false;
-        }
         uint32_t box_size = buffer.read_u32_be(offset);
-        if (box_size < 8 || offset + box_size > end) {
+        if (box_size < 8 || uint64_t(offset) + uint64_t(box_size) > uint64_t(end)) {
             return false;
         }
         if (buffer.cmp_any_of(offset + 4, 4, {"iprp", "ipco"})) {
