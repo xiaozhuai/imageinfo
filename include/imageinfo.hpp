@@ -38,6 +38,7 @@
 #include <cstring>
 #include <fstream>
 #include <functional>
+#include <limits>
 #include <memory>
 #include <set>
 #include <string>
@@ -444,7 +445,7 @@ inline bool try_avif_heic(ReadInterface &ri, size_t length, ImageInfo &info) {
     }
     auto buffer = ri.read_buffer(0, 4);
     uint32_t ftyp_box_length = buffer.read_u32_be(0);
-    if (length < ftyp_box_length + 12) {
+    if (uint64_t(length) < uint64_t(ftyp_box_length) + 12) {
         return false;
     }
     buffer = ri.read_buffer(0, ftyp_box_length + 12);
@@ -464,6 +465,9 @@ inline bool try_avif_heic(ReadInterface &ri, size_t length, ImageInfo &info) {
         return false;
     }
 
+    if (ftyp_box_length < 16 || (ftyp_box_length - 16) % 4 != 0) {
+        return false;
+    }
     uint32_t compatible_brand_size = (ftyp_box_length - 16) / 4;
     std::unordered_set<std::string> compatible_brands;
     for (uint32_t i = 0; i < compatible_brand_size; ++i) {
@@ -485,7 +489,7 @@ inline bool try_avif_heic(ReadInterface &ri, size_t length, ImageInfo &info) {
 
     uint32_t meta_length = buffer.read_u32_be(ftyp_box_length);
 
-    if (length < ftyp_box_length + 12 + meta_length) {
+    if (uint64_t(length) < uint64_t(ftyp_box_length) + 12 + uint64_t(meta_length)) {
         return false;
     }
 
@@ -506,7 +510,13 @@ inline bool try_avif_heic(ReadInterface &ri, size_t length, ImageInfo &info) {
      *           - ispe
      */
     while (offset < end) {
+        if (offset + 8 > end) {
+            return false;
+        }
         uint32_t box_size = buffer.read_u32_be(offset);
+        if (box_size < 8 || uint64_t(offset) + uint64_t(box_size) > uint64_t(end)) {
+            return false;
+        }
         if (buffer.cmp_any_of(offset + 4, 4, {"iprp", "ipco"})) {
             end = offset + box_size;
             offset += 8;
@@ -705,12 +715,37 @@ inline bool try_hdr(ReadInterface &ri, size_t length, ImageInfo &info) {
     }
     auto y_str = resolution.substr(p0 + 1, p1 - p0 - 1);
     auto x_str = resolution.substr(p2 + 1);
-    if (!is_numeric(x_str) || !is_numeric(y_str)) return false;
+    if (!is_numeric(x_str) || !is_numeric(y_str)) {
+        return false;
+    }
+    auto safe_stou32 = [](const std::string &str, uint32_t &result) {
+        if (str.empty()) {
+            return false;
+        }
+        result = 0;
+        uint32_t limit = std::numeric_limits<uint32_t>::max() / 10;
+        uint32_t limit_mod = std::numeric_limits<uint32_t>::max() % 10;
+        for (char c : str) {
+            if (c < '0' || c > '9') {
+                return false;
+            }
+            int digit = c - '0';
+            if (result > limit || (result == limit && digit > limit_mod)) {
+                return false;
+            }
+            result = result * 10 + digit;
+        }
+        return true;
+    };
+    uint32_t x, y;
+    if (!safe_stou32(x_str, x) || !safe_stou32(y_str, y)) {
+        return false;
+    }
+    if (x == 0 || y == 0) {
+        return false;
+    }
     info = ImageInfo(kFormatHdr, "hdr", "hdr", "image/vnd.radiance");
-    info.set_size(         //
-        std::stol(x_str),  //
-        std::stol(y_str)   //
-    );
+    info.set_size(x, y);
     return true;
 }
 
@@ -773,9 +808,14 @@ inline bool try_icns(ReadInterface &ri, size_t length, ImageInfo &info) {
         buffer = ri.read_buffer(offset, 8);
         auto type = buffer.read_string(0, 4);
         uint32_t entry_size = buffer.read_u32_be(4);
-        int64_t s = size_map.at(type);
-        entry_sizes.emplace_back(s, s);
-        max_size = (std::max)(max_size, s);
+        auto it = size_map.find(type);
+        if (it != size_map.end()) {
+            int64_t s = it->second;
+            entry_sizes.emplace_back(s, s);
+            max_size = std::max(max_size, s);
+        } else {
+            return false;
+        }
         offset += entry_size;
     }
 
@@ -910,7 +950,7 @@ inline bool try_ktx(ReadInterface &ri, size_t length, ImageInfo &info) {
 
 // https://www.fileformat.info/format/png/corion.htm
 inline bool try_png(ReadInterface &ri, size_t length, ImageInfo &info) {
-    if (length < 4) {
+    if (length < 24) {
         return false;
     }
 
@@ -920,7 +960,7 @@ inline bool try_png(ReadInterface &ri, size_t length, ImageInfo &info) {
     }
 
     std::string first_chunk_type = buffer.read_string(12, 4);
-    if (first_chunk_type == "IHDR" && buffer.size() >= 24) {
+    if (first_chunk_type == "IHDR") {
         info = ImageInfo(kFormatPng, "png", "png", "image/png");
         info.set_size(               //
             buffer.read_u32_be(16),  //
@@ -928,7 +968,7 @@ inline bool try_png(ReadInterface &ri, size_t length, ImageInfo &info) {
         );
         return true;
     } else if (first_chunk_type == "CgBI") {
-        if (buffer.read_string(28, 4) == "IHDR" && buffer.size() >= 40) {
+        if (buffer.size() >= 40 && buffer.read_string(28, 4) == "IHDR") {
             info = ImageInfo(kFormatPng, "png", "png", "image/png");
             info.set_size(               //
                 buffer.read_u32_be(32),  //
@@ -994,7 +1034,7 @@ inline bool try_tiff(ReadInterface &ri, size_t length, ImageInfo &info) {
     bool swap_endian = buffer[0] == 0x4D;
 
     auto offset = buffer.read_int<uint32_t>(4, swap_endian);
-    if (length < offset + 2) {
+    if (uint64_t(length) < uint64_t(offset) + 2) {
         return false;
     }
 
@@ -1006,6 +1046,9 @@ inline bool try_tiff(ReadInterface &ri, size_t length, ImageInfo &info) {
     int64_t width = -1;
     int64_t height = -1;
     for (uint16_t i = 0; i < num_entry && length >= offset + 12 && (width == -1 || height == -1); ++i, offset += 12) {
+        if (offset + 12 > length) {
+            return false;
+        }
         buffer = ri.read_buffer(offset, 12);
 
         auto tag = buffer.read_int<uint16_t>(0, swap_endian);
@@ -1295,7 +1338,7 @@ inline ImageInfo parse(const InputType &input,                          //
     return parse<ReaderType>(input, Format::kFormatUnknown, likely_formats, must_be_one_of_likely_formats);
 }
 
-};  // namespace imageinfo
+}  // namespace imageinfo
 
 #ifdef __clang__
 #pragma clang diagnostic pop

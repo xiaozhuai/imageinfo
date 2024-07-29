@@ -115,5 +115,25 @@ int main() {
 
     { ASSET_II(IMAGES_DIR "valid/tga/sample.tga", kNoError, kFormatTga, 123l, 456l); }
 
+    {
+        // These files are from @chan233
+        // https://github.com/xiaozhuai/imageinfo/pull/14
+        // https://github.com/xiaozhuai/imageinfo/pull/15
+        ASSET_II(IMAGES_DIR "invalid/crash_assert_failed", kUnrecognizedFormat, kFormatUnknown, -1l, -1l);
+        ASSET_II(IMAGES_DIR "invalid/crash_avif_1", kUnrecognizedFormat, kFormatUnknown, -1l, -1l);
+        ASSET_II(IMAGES_DIR "invalid/crash_avif_2", kUnrecognizedFormat, kFormatUnknown, -1l, -1l);
+        ASSET_II(IMAGES_DIR "invalid/crash_avif_3", kUnrecognizedFormat, kFormatUnknown, -1l, -1l);
+        ASSET_II(IMAGES_DIR "invalid/crash_avif_4", kUnrecognizedFormat, kFormatUnknown, -1l, -1l);
+        ASSET_II(IMAGES_DIR "invalid/crash_hdr_1", kUnrecognizedFormat, kFormatUnknown, -1l, -1l);
+        ASSET_II(IMAGES_DIR "invalid/crash_hdr_2", kUnrecognizedFormat, kFormatUnknown, -1l, -1l);
+        ASSET_II(IMAGES_DIR "invalid/crash_hdr_3", kUnrecognizedFormat, kFormatUnknown, -1l, -1l);
+        ASSET_II(IMAGES_DIR "invalid/crash_hdr_4", kUnrecognizedFormat, kFormatUnknown, -1l, -1l);
+        ASSET_II(IMAGES_DIR "invalid/crash_png_1", kUnrecognizedFormat, kFormatUnknown, -1l, -1l);
+        ASSET_II(IMAGES_DIR "invalid/crash_png_2", kUnrecognizedFormat, kFormatUnknown, -1l, -1l);
+        ASSET_II(IMAGES_DIR "invalid/crash_icns_1", kUnrecognizedFormat, kFormatUnknown, -1l, -1l);
+        ASSET_II(IMAGES_DIR "invalid/crash_icns_2", kUnrecognizedFormat, kFormatUnknown, -1l, -1l);
+        ASSET_II(IMAGES_DIR "invalid/crash_tiff_1", kUnrecognizedFormat, kFormatUnknown, -1l, -1l);
+    }
+
     return 0;
 }
