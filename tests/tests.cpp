@@ -123,6 +123,7 @@ int main() {
         ASSET_II(IMAGES_DIR "invalid/crash_avif_1", kUnrecognizedFormat, kFormatUnknown, -1l, -1l);
         ASSET_II(IMAGES_DIR "invalid/crash_avif_2", kUnrecognizedFormat, kFormatUnknown, -1l, -1l);
         ASSET_II(IMAGES_DIR "invalid/crash_avif_3", kUnrecognizedFormat, kFormatUnknown, -1l, -1l);
+        ASSET_II(IMAGES_DIR "invalid/crash_avif_4", kUnrecognizedFormat, kFormatUnknown, -1l, -1l);
         ASSET_II(IMAGES_DIR "invalid/crash_hdr_1", kUnrecognizedFormat, kFormatUnknown, -1l, -1l);
         ASSET_II(IMAGES_DIR "invalid/crash_hdr_2", kUnrecognizedFormat, kFormatUnknown, -1l, -1l);
         ASSET_II(IMAGES_DIR "invalid/crash_hdr_3", kUnrecognizedFormat, kFormatUnknown, -1l, -1l);
