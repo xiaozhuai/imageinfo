@@ -439,6 +439,7 @@ inline bool is_numeric(const std::string &str) {
 
 // https://nokiatech.github.io/heif/technical.html
 // https://www.jianshu.com/p/b016d10a087d
+// https://github.com/ksvc/MediaParser
 inline bool try_avif_heic(ReadInterface &ri, size_t length, ImageInfo &info) {
     if (length < 4) {
         return false;
