@@ -86,6 +86,7 @@ enum Format {
     kFormatHeic,
     kFormatIcns,
     kFormatIco,
+    kFormatJ2k,
     kFormatJp2,
     kFormatJpeg,
     kFormatJpx,
@@ -913,6 +914,35 @@ inline bool try_icns(ReadInterface &ri, size_t length, ImageInfo &info) {
 
 // https://docs.fileformat.com/image/jp2/
 // https://docs.fileformat.com/image/jpx/
+inline bool try_j2k(ReadInterface &ri, size_t length, ImageInfo &info) {
+    if (length < 16) {
+        return false;
+    }
+    auto buffer = ri.read_buffer(0, 16);
+
+    if (buffer.cmp(0, 2, "\xFF\x4F")) {
+        uint16_t soc_length = buffer.read_u16_be(2);
+        if (length < soc_length + 2) {
+            return false;
+        }
+        if (!buffer.cmp(4, 4, "\x00\x2F\x00\x00")) {
+            return false;
+        }
+        info = ImageInfo(kFormatJ2k, "j2k", "j2k", "image/j2k");
+        info.set_size(              //
+            buffer.read_u32_be(8),  //
+            buffer.read_u32_be(12)  //
+        );
+        return true;
+    }
+
+    return false;
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+// https://docs.fileformat.com/image/jp2/
+// https://docs.fileformat.com/image/jpx/
 inline bool try_jp2_jpx(ReadInterface &ri, size_t length, ImageInfo &info) {
     if (length < 8) {
         return false;
@@ -1309,6 +1339,7 @@ enum DetectorIndex {
     kDetectorIndexGif,
     kDetectorIndexHdr,
     kDetectorIndexIcns,
+    kDetectorIndexJ2k,
     kDetectorIndexJp2Jpx,
     kDetectorIndexJpg,
     kDetectorIndexKtx,
@@ -1368,6 +1399,7 @@ inline ImageInfo parse(ReadInterface &ri,                               //
         {kFormatHeic, kDetectorIndexAvifHeic, try_avif_heic},
         {kFormatIcns,     kDetectorIndexIcns,      try_icns},
         { kFormatIco,   kDetectorIndexCurIco,   try_cur_ico},
+        { kFormatJ2k,      kDetectorIndexJ2k,       try_j2k},
         { kFormatJp2,   kDetectorIndexJp2Jpx,   try_jp2_jpx},
         {kFormatJpeg,      kDetectorIndexJpg,       try_jpg},
         { kFormatJpx,   kDetectorIndexJp2Jpx,   try_jp2_jpx},

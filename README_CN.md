@@ -25,6 +25,7 @@ imageinfo 已经重构，如果你使用的是旧版本，请查看 `v1` 分支�
 * [x] heic (heif)
 * [x] icns
 * [x] ico
+* [x] j2k
 * [x] jp2
 * [x] jpeg (jpg)
 * [x] jpx

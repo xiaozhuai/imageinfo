@@ -25,6 +25,7 @@ imageinfo has been restructured, if you are using old version, please check `v1`
 * [x] heic (heif)
 * [x] icns
 * [x] ico
+* [x] j2k
 * [x] jp2
 * [x] jpeg (jpg)
 * [x] jpx

@@ -71,6 +71,11 @@ int main() {
     { ASSET_II(IMAGES_DIR "valid/icns/sample.icns", kNoError, kFormatIcns, 128l, 128l); }
 
     {
+        ASSET_II(IMAGES_DIR "valid/j2k/balloon.j2k", kNoError, kFormatJ2k, 2717l, 3701l);
+        ASSET_II(IMAGES_DIR "valid/j2k/sample.j2k", kNoError, kFormatJ2k, 123l, 456l);
+    }
+
+    {
         ASSET_II(IMAGES_DIR "valid/jp2/sample.jp2", kNoError, kFormatJp2, 123l, 456l);
         ASSET_II(IMAGES_DIR "valid/jp2/jpx_disguised_as_jp2.jp2", kNoError, kFormatJp2, 2717l, 3701l);
     }
