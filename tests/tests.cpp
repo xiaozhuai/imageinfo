@@ -40,6 +40,7 @@ int main() {
         ASSET_II(IMAGES_DIR "valid/heic/sample.heic", kNoError, kFormatHeic, 122l, 456l);
         ASSET_II(IMAGES_DIR "valid/heic/sample2.heic", kNoError, kFormatHeic, 1440l, 960l);
         ASSET_II(IMAGES_DIR "valid/heic/sample3.heic", kNoError, kFormatHeic, 1280l, 854l);
+        ASSET_II(IMAGES_DIR "valid/heic/sample4.heic", kNoError, kFormatHeic, 2252l, 4000l);
     }
 
     {

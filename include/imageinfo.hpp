@@ -509,30 +509,113 @@ inline bool try_avif_heic(ReadInterface &ri, size_t length, ImageInfo &info) {
      *           - ...
      *           - ispe
      */
+    uint16_t pitm_id = 0;
+    std::unordered_map<uint16_t, std::unordered_set<uint8_t>> ipma_map;
+    off_t ipco_start = 0;
+    off_t ipco_end = 0;
+    uint8_t ipco_child_index = 1;
+    std::unordered_map<uint8_t, ImageSize> ispe_map;
+    std::unordered_map<uint8_t, uint8_t> irot_map;
     while (offset < end) {
         if (offset + 8 > end) {
-            return false;
+            break;
         }
         uint32_t box_size = buffer.read_u32_be(offset);
         if (box_size < 8 || uint64_t(offset) + uint64_t(box_size) > uint64_t(end)) {
-            return false;
+            break;
         }
-        if (buffer.cmp_any_of(offset + 4, 4, {"iprp", "ipco"})) {
-            end = offset + box_size;
+        if (buffer.cmp(offset + 4, 4, "pitm")) {
+            if (box_size < 14) {
+                return false;
+            }
+            pitm_id = buffer.read_u16_be(offset + 12);
+            offset += box_size;
+        } else if (buffer.cmp(offset + 4, 4, "ipma")) {
+            if (box_size < 16) {
+                return false;
+            }
+            uint16_t entry_count = buffer.read_u16_be(offset + 14);
+            off_t t = offset + 16;
+            for (uint16_t i = 0; i < entry_count; ++i) {
+                if (box_size < 18) {
+                    return false;
+                }
+                uint16_t item_id = buffer.read_u16_be(t);
+                t += 2;
+                if (box_size < 19) {
+                    return false;
+                }
+                uint8_t index_count = buffer.read_u8(t);
+                t += 1;
+                if (box_size < 19 + index_count) {
+                    return false;
+                }
+                std::unordered_set<uint8_t> indices;
+                for (uint8_t j = 0; j < index_count; ++j, ++t) {
+                    auto index = buffer.read_u8(t) & 0x0F;
+                    indices.insert(index);
+                }
+                ipma_map[item_id] = indices;
+            }
+            offset += box_size;
+        } else if (buffer.cmp(offset + 4, 4, "iprp")) {
+            offset += 8;
+        } else if (buffer.cmp(offset + 4, 4, "ipco")) {
+            ipco_start = offset;
+            ipco_end = offset + box_size;
             offset += 8;
         } else if (buffer.cmp(offset + 4, 4, "ispe")) {
+            if (box_size < 20) {
+                return false;
+            }
+            auto width = buffer.read_u32_be(offset + 12);
+            auto height = buffer.read_u32_be(offset + 16);
+            ispe_map[ipco_child_index] = ImageSize(width, height);
+            ipco_child_index++;
+            offset += box_size;
+        } else if (buffer.cmp(offset + 4, 4, "irot")) {
+            if (box_size < 9) {
+                return false;
+            }
+            uint8_t irot = buffer.read_u8(offset + 8);
+            irot_map[ipco_child_index] = irot;
+            ipco_child_index++;
+            offset += box_size;
+        } else {
+            if (offset > ipco_start && offset < ipco_end) {
+                ipco_child_index++;
+            }
+            offset += box_size;
+        }
+    }
+
+    auto ipma_it = ipma_map.find(pitm_id);
+    if (ipma_it == ipma_map.end()) {
+        return false;
+    }
+    auto &indices = ipma_it->second;
+    uint8_t irot = 0;
+    for (const auto &pair : irot_map) {
+        auto index = pair.first;
+        if (indices.find(index) != indices.end()) {
+            irot = pair.second;
+            break;
+        }
+    }
+    for (const auto &pair : ispe_map) {
+        auto index = pair.first;
+        if (indices.find(index) != indices.end()) {
+            auto size = pair.second;
+            if (irot == 1 || irot == 3 || irot == 6 || irot == 7) {
+                std::swap(size.width, size.height);
+            }
             if (is_avif) {
                 info = ImageInfo(kFormatAvif, "avif", "avif", "image/avif");
             } else {
                 info = ImageInfo(kFormatHeic, "heic", "heic", "image/heic");
             }
-            info.set_size(                        //
-                buffer.read_u32_be(offset + 12),  //
-                buffer.read_u32_be(offset + 16)   //
-            );
+            info.set_size(size);
             return true;
-        } else {
-            offset += box_size;
         }
     }
 
