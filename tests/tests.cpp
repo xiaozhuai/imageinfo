@@ -78,8 +78,8 @@ int main() {
     { ASSET_II(IMAGES_DIR "valid/jpx/sample.jpx", kNoError, kFormatJpx, 2717l, 3701l); }
 
     {
-        ASSET_II(IMAGES_DIR "valid/jpg/1x2-flipped-big-endian.jpg", kNoError, kFormatJpeg, 1l, 2l);
-        ASSET_II(IMAGES_DIR "valid/jpg/1x2-flipped-little-endian.jpg", kNoError, kFormatJpeg, 1l, 2l);
+        ASSET_II(IMAGES_DIR "valid/jpg/1x2-flipped-big-endian.jpg", kNoError, kFormatJpeg, 2l, 1l);
+        ASSET_II(IMAGES_DIR "valid/jpg/1x2-flipped-little-endian.jpg", kNoError, kFormatJpeg, 2l, 1l);
         ASSET_II(IMAGES_DIR "valid/jpg/large.jpg", kNoError, kFormatJpeg, 1600l, 1200l);
         ASSET_II(IMAGES_DIR "valid/jpg/optimized.jpg", kNoError, kFormatJpeg, 123l, 456l);
         ASSET_II(IMAGES_DIR "valid/jpg/progressive.jpg", kNoError, kFormatJpeg, 123l, 456l);
@@ -87,6 +87,7 @@ int main() {
         ASSET_II(IMAGES_DIR "valid/jpg/sample2.jpg", kNoError, kFormatJpeg, 1200l, 1603l);
         ASSET_II(IMAGES_DIR "valid/jpg/sampleExported.jpg", kNoError, kFormatJpeg, 123l, 456l);
         ASSET_II(IMAGES_DIR "valid/jpg/very-large.jpg", kNoError, kFormatJpeg, 4800l, 3600l);
+        ASSET_II(IMAGES_DIR "valid/jpg/rotation-90.jpg", kNoError, kFormatJpeg, 3024l, 4032l);
     }
 
     { ASSET_II(IMAGES_DIR "valid/ktx/sample.ktx", kNoError, kFormatKtx, 123l, 456l); }

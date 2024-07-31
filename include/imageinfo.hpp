@@ -983,6 +983,7 @@ inline bool try_jpg(ReadInterface &ri, size_t length, ImageInfo &info) {
         return false;
     }
 
+    uint16_t orientation = 1;
     off_t offset = 2;
     while (offset + 9 <= length) {
         buffer = ri.read_buffer(offset, 9);
@@ -993,15 +994,44 @@ inline bool try_jpg(ReadInterface &ri, size_t length, ImageInfo &info) {
             continue;
         }
 
+        // 0xFFE1 is application 1 (APP1)
+        if (buffer.cmp(0, 2, "\xFF\xE1")) {
+            if (offset + section_size + 2 > length) {
+                return false;
+            }
+            buffer = ri.read_buffer(offset, section_size + 2);
+            if (buffer.cmp(4, 5, "Exif\0")) {
+                bool big_endian = !buffer.cmp(10, 1, "I");
+                auto first_ifd_offset = buffer.read_int<uint32_t>(14, big_endian);
+                if (first_ifd_offset < 8 || uint64_t(first_ifd_offset) + 12 > uint64_t(section_size + 2)) {
+                    return false;
+                }
+                auto ifd_main_entries_count = buffer.read_int<uint16_t>(first_ifd_offset + 10, big_endian);
+                for (uint16_t i = 0; i < ifd_main_entries_count; ++i) {
+                    off_t entry_offset = first_ifd_offset + 12 + i * 12;
+                    if (entry_offset + 12 > section_size + 2) {
+                        return false;
+                    }
+                    auto tag = buffer.read_int<uint16_t>(entry_offset, big_endian);
+                    if (tag == 274) {  // Orientation Tag
+                        orientation = buffer.read_int<uint16_t>(entry_offset + 8, big_endian);
+                    }
+                }
+            }
+            offset += section_size + 2;
+            continue;
+        }
+
         // 0xFFC0 is baseline standard (SOF0)
         // 0xFFC1 is baseline optimized (SOF1)
         // 0xFFC2 is progressive (SOF2)
         if (buffer.cmp_any_of(0, 2, {"\xFF\xC0", "\xFF\xC1", "\xFF\xC2"})) {
             info = ImageInfo(kFormatJpeg, "jpg", "jpeg", "image/jpeg");
-            info.set_size(              //
-                buffer.read_u16_be(7),  //
-                buffer.read_u16_be(5)   //
-            );
+            ImageSize size(buffer.read_u16_be(7), buffer.read_u16_be(5));
+            if (orientation == 5 || orientation == 6 || orientation == 7 || orientation == 8) {
+                std::swap(size.width, size.height);
+            }
+            info.set_size(size);
             return true;
         }
         offset += section_size + 2;
