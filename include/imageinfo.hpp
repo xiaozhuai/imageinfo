@@ -476,11 +476,20 @@ inline bool try_avif_heic(ReadInterface &ri, size_t length, ImageInfo &info) {
         compatible_brands.insert(buffer.read_string(16 + i * 4, 4));
     }
 
-    bool is_avif;
+    Format format;
+    const char *ext;
+    const char *full_ext;
+    const char *mimetype;
     if (compatible_brands.find("avif") != compatible_brands.end() || buffer.cmp(8, 4, "avif")) {
-        is_avif = true;
+        format = kFormatAvif;
+        ext = "avif";
+        full_ext = "avif";
+        mimetype = "image/avif";
     } else if (compatible_brands.find("heic") != compatible_brands.end() || buffer.cmp(8, 4, "heic")) {
-        is_avif = false;
+        format = kFormatHeic;
+        ext = "heic";
+        full_ext = "heic";
+        mimetype = "image/heic";
     } else {
         return false;
     }
@@ -611,11 +620,7 @@ inline bool try_avif_heic(ReadInterface &ri, size_t length, ImageInfo &info) {
             if (irot == 1 || irot == 3 || irot == 6 || irot == 7) {
                 std::swap(size.width, size.height);
             }
-            if (is_avif) {
-                info = ImageInfo(kFormatAvif, "avif", "avif", "image/avif");
-            } else {
-                info = ImageInfo(kFormatHeic, "heic", "heic", "image/heic");
-            }
+            info = ImageInfo(format, ext, full_ext, mimetype);
             info.set_size(size);
             return true;
         }
@@ -653,11 +658,20 @@ inline bool try_cur_ico(ReadInterface &ri, size_t length, ImageInfo &info) {
     }
     auto buffer = ri.read_buffer(0, 6);
 
-    bool is_cur;
-    if (buffer.cmp(0, 4, "\x00\x00\x02\x00")) {
-        is_cur = true;
-    } else if (buffer.cmp(0, 4, "\x00\x00\x01\x00")) {
-        is_cur = false;
+    Format format;
+    const char *ext;
+    const char *full_ext;
+    const char *mimetype;
+    if (buffer.cmp(0, 4, "\x00\x00\x01\x00")) {
+        format = kFormatIco;
+        ext = "ico";
+        full_ext = "ico";
+        mimetype = "image/ico";
+    } else if (buffer.cmp(0, 4, "\x00\x00\x02\x00")) {
+        format = kFormatCur;
+        ext = "cur";
+        full_ext = "cur";
+        mimetype = "image/cur";
     } else {
         return false;
     }
@@ -693,11 +707,7 @@ inline bool try_cur_ico(ReadInterface &ri, size_t length, ImageInfo &info) {
         return false;
     }
 
-    if (is_cur) {
-        info = ImageInfo(kFormatCur, "cur", "cur", "image/cur");
-    } else {
-        info = ImageInfo(kFormatIco, "ico", "ico", "image/ico");
-    }
+    info = ImageInfo(format, ext, full_ext, mimetype);
     info.set_entry_sizes(sizes);
     info.set_size(sizes.front());
     return true;
@@ -963,11 +973,20 @@ inline bool try_jp2_jpx(ReadInterface &ri, size_t length, ImageInfo &info) {
         return false;
     }
 
-    bool is_jp2;
+    Format format;
+    const char *ext;
+    const char *full_ext;
+    const char *mimetype;
     if (buffer.cmp(8, 4, "jp2 ")) {
-        is_jp2 = true;
+        format = kFormatJp2;
+        ext = "jp2";
+        full_ext = "jp2";
+        mimetype = "image/jp2";
     } else if (buffer.cmp(8, 4, "jpx ")) {
-        is_jp2 = false;
+        format = kFormatJpx;
+        ext = "jpx";
+        full_ext = "jpx";
+        mimetype = "image/jpx";
     } else {
         return false;
     }
@@ -979,11 +998,7 @@ inline bool try_jp2_jpx(ReadInterface &ri, size_t length, ImageInfo &info) {
         buffer = ri.read_buffer(offset, 24);
         if (buffer.cmp(4, 4, "jp2h")) {
             if (buffer.cmp(12, 4, "ihdr")) {
-                if (is_jp2) {
-                    info = ImageInfo(kFormatJp2, "jp2", "jp2", "image/jp2");
-                } else {
-                    info = ImageInfo(kFormatJpx, "jpx", "jpx", "image/jpx");
-                }
+                info = ImageInfo(format, ext, full_ext, mimetype);
                 info.set_size(               //
                     buffer.read_u32_be(20),  //
                     buffer.read_u32_be(16)   //
