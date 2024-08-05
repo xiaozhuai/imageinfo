@@ -920,12 +920,10 @@ inline bool try_j2k(ReadInterface &ri, size_t length, ImageInfo &info) {
     }
     auto buffer = ri.read_buffer(0, 16);
 
-    if (buffer.cmp(0, 2, "\xFF\x4F")) {
-        uint16_t soc_length = buffer.read_u16_be(2);
-        if (length < soc_length + 2) {
-            return false;
-        }
-        if (!buffer.cmp(4, 4, "\x00\x2F\x00\x00")) {
+    // SOC and SIZ
+    if (buffer.cmp(0, 2, "\xFF\x4F") && buffer.cmp(2, 2, "\xFF\x51")) {
+        uint16_t siz_length = buffer.read_u16_be(4);
+        if (length < siz_length + 4) {
             return false;
         }
         info = ImageInfo(kFormatJ2k, "j2k", "j2k", "image/j2k");

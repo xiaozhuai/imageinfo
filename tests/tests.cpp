@@ -73,6 +73,8 @@ int main() {
     {
         ASSET_II(IMAGES_DIR "valid/j2k/balloon.j2k", kNoError, kFormatJ2k, 2717l, 3701l);
         ASSET_II(IMAGES_DIR "valid/j2k/sample.j2k", kNoError, kFormatJ2k, 123l, 456l);
+        ASSET_II(IMAGES_DIR "valid/j2k/_00042.j2k", kNoError, kFormatJ2k, 1920l, 1080l);
+        ASSET_II(IMAGES_DIR "valid/j2k/cthead1.j2k", kNoError, kFormatJ2k, 256l, 256l);
     }
 
     {
