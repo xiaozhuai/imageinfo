@@ -88,8 +88,9 @@ enum Format {
     kFormatIco,
     kFormatJ2k,
     kFormatJp2,
-    kFormatJpeg,
+    kFormatJph,
     kFormatJpx,
+    kFormatJpeg,
     kFormatKtx,
     kFormatPng,
     kFormatPsd,
@@ -924,7 +925,7 @@ inline bool try_icns(ReadInterface &ri, size_t length, ImageInfo &info) {
 
 // https://docs.fileformat.com/image/jp2/
 // https://docs.fileformat.com/image/jpx/
-inline bool try_j2k(ReadInterface &ri, size_t length, ImageInfo &info) {
+inline bool try_jpeg2000_code_stream(ReadInterface &ri, size_t length, ImageInfo &info) {
     if (length < 16) {
         return false;
     }
@@ -951,7 +952,7 @@ inline bool try_j2k(ReadInterface &ri, size_t length, ImageInfo &info) {
 
 // https://docs.fileformat.com/image/jp2/
 // https://docs.fileformat.com/image/jpx/
-inline bool try_jp2_jpx(ReadInterface &ri, size_t length, ImageInfo &info) {
+inline bool try_jpeg2000(ReadInterface &ri, size_t length, ImageInfo &info) {
     if (length < 8) {
         return false;
     }
@@ -982,6 +983,11 @@ inline bool try_jp2_jpx(ReadInterface &ri, size_t length, ImageInfo &info) {
         ext = "jp2";
         full_ext = "jp2";
         mimetype = "image/jp2";
+    } else if (buffer.cmp(8, 4, "jph ")) {
+        format = kFormatJph;
+        ext = "jph";
+        full_ext = "jph";
+        mimetype = "image/jph";
     } else if (buffer.cmp(8, 4, "jpx ")) {
         format = kFormatJpx;
         ext = "jpx";
@@ -1352,8 +1358,8 @@ enum DetectorIndex {
     kDetectorIndexGif,
     kDetectorIndexHdr,
     kDetectorIndexIcns,
-    kDetectorIndexJ2k,
-    kDetectorIndexJp2Jpx,
+    kDetectorIndexJpeg2000CodeStream,
+    kDetectorIndexJpeg2000,
     kDetectorIndexJpg,
     kDetectorIndexKtx,
     kDetectorIndexPng,
@@ -1403,26 +1409,27 @@ inline ImageInfo parse(ReadInterface &ri,                               //
     size_t length = ri.length();
 
     constexpr DetectorInfo dl[] = {
-        {kFormatAvif, kDetectorIndexAvifHeic, try_avif_heic},
-        { kFormatBmp,      kDetectorIndexBmp,       try_bmp},
-        { kFormatCur,   kDetectorIndexCurIco,   try_cur_ico},
-        { kFormatDds,      kDetectorIndexDds,       try_dds},
-        { kFormatGif,      kDetectorIndexGif,       try_gif},
-        { kFormatHdr,      kDetectorIndexHdr,       try_hdr},
-        {kFormatHeic, kDetectorIndexAvifHeic, try_avif_heic},
-        {kFormatIcns,     kDetectorIndexIcns,      try_icns},
-        { kFormatIco,   kDetectorIndexCurIco,   try_cur_ico},
-        { kFormatJ2k,      kDetectorIndexJ2k,       try_j2k},
-        { kFormatJp2,   kDetectorIndexJp2Jpx,   try_jp2_jpx},
-        {kFormatJpeg,      kDetectorIndexJpg,       try_jpg},
-        { kFormatJpx,   kDetectorIndexJp2Jpx,   try_jp2_jpx},
-        { kFormatKtx,      kDetectorIndexKtx,       try_ktx},
-        { kFormatPng,      kDetectorIndexPng,       try_png},
-        { kFormatPsd,      kDetectorIndexPsd,       try_psd},
-        { kFormatQoi,      kDetectorIndexQoi,       try_qoi},
-        {kFormatTiff,     kDetectorIndexTiff,      try_tiff},
-        {kFormatWebp,     kDetectorIndexWebp,      try_webp},
-        { kFormatTga,      kDetectorIndexTga,       try_tga},
+        {kFormatAvif,           kDetectorIndexAvifHeic,            try_avif_heic},
+        { kFormatBmp,                kDetectorIndexBmp,                  try_bmp},
+        { kFormatCur,             kDetectorIndexCurIco,              try_cur_ico},
+        { kFormatDds,                kDetectorIndexDds,                  try_dds},
+        { kFormatGif,                kDetectorIndexGif,                  try_gif},
+        { kFormatHdr,                kDetectorIndexHdr,                  try_hdr},
+        {kFormatHeic,           kDetectorIndexAvifHeic,            try_avif_heic},
+        {kFormatIcns,               kDetectorIndexIcns,                 try_icns},
+        { kFormatIco,             kDetectorIndexCurIco,              try_cur_ico},
+        { kFormatJ2k, kDetectorIndexJpeg2000CodeStream, try_jpeg2000_code_stream},
+        { kFormatJp2,           kDetectorIndexJpeg2000,             try_jpeg2000},
+        { kFormatJph,           kDetectorIndexJpeg2000,             try_jpeg2000},
+        { kFormatJpx,           kDetectorIndexJpeg2000,             try_jpeg2000},
+        {kFormatJpeg,                kDetectorIndexJpg,                  try_jpg},
+        { kFormatKtx,                kDetectorIndexKtx,                  try_ktx},
+        { kFormatPng,                kDetectorIndexPng,                  try_png},
+        { kFormatPsd,                kDetectorIndexPsd,                  try_psd},
+        { kFormatQoi,                kDetectorIndexQoi,                  try_qoi},
+        {kFormatTiff,               kDetectorIndexTiff,                 try_tiff},
+        {kFormatWebp,               kDetectorIndexWebp,                 try_webp},
+        { kFormatTga,                kDetectorIndexTga,                  try_tga},
     };
     static_assert(FORMAT_COUNT == countof(dl), "FORMAT_COUNT != countof(dl)");
     static_assert(check_format_order(dl), "Format order is incorrect");

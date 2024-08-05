@@ -25,10 +25,9 @@ imageinfo has been restructured, if you are using old version, please check `v1`
 * [x] heic (heif)
 * [x] icns
 * [x] ico
-* [x] j2k
-* [x] jp2
+* [x] jpeg2000 code stream (j2k, j2c, jpc, jhc)
+* [x] jpeg2000 (jp2, jpx, jph)
 * [x] jpeg (jpg)
-* [x] jpx
 * [x] ktx
 * [x] png
 * [x] psd

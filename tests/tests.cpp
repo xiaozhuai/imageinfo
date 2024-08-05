@@ -82,6 +82,8 @@ int main() {
         ASSET_II(IMAGES_DIR "valid/jp2/jpx_disguised_as_jp2.jp2", kNoError, kFormatJp2, 2717l, 3701l);
     }
 
+    { ASSET_II(IMAGES_DIR "valid/jph/byte.jph", kNoError, kFormatJph, 20l, 20l); }
+
     { ASSET_II(IMAGES_DIR "valid/jpx/sample.jpx", kNoError, kFormatJpx, 2717l, 3701l); }
 
     {
