@@ -1190,54 +1190,122 @@ inline bool try_tiff(ReadInterface &ri, size_t length, ImageInfo &info) {
         return false;
     }
     auto buffer = ri.read_buffer(0, 8);
-    if (!buffer.cmp_any_of(0, 4, {"\x49\x49\x2A\x00", "\x4D\x4D\x00\x2A"})) {
+    if (!buffer.cmp_any_of(0, 2, {"\x49\x49", "\x4D\x4D"})) {
         return false;
     }
-
     bool swap_endian = buffer[0] == 0x4D;
 
-    auto offset = buffer.read_int<uint32_t>(4, swap_endian);
-    if (uint64_t(length) < uint64_t(offset) + 2) {
-        return false;
-    }
-
-    buffer = ri.read_buffer(offset, 2);
-
-    auto num_entry = buffer.read_int<uint16_t>(0, swap_endian);
-    offset += 2;
-
-    int64_t width = -1;
-    int64_t height = -1;
-    for (uint16_t i = 0; i < num_entry && length >= offset + 12 && (width == -1 || height == -1); ++i, offset += 12) {
-        if (offset + 12 > length) {
+    auto tiff_version = buffer.read_int<uint16_t>(2, swap_endian);
+    if (tiff_version == 0x2A) {
+        auto offset = buffer.read_int<uint32_t>(4, swap_endian);
+        if (uint64_t(length) < uint64_t(offset) + 2) {
             return false;
         }
-        buffer = ri.read_buffer(offset, 12);
 
-        auto tag = buffer.read_int<uint16_t>(0, swap_endian);
-        auto type = buffer.read_int<uint16_t>(2, swap_endian);
+        buffer = ri.read_buffer(offset, 2);
 
-        if (tag == 256) {  // Found ImageWidth entry
-            if (type == 3) {
-                width = buffer.read_int<uint16_t>(8, swap_endian);
-            } else if (type == 4) {
-                width = buffer.read_int<uint32_t>(8, swap_endian);
+        auto num_entry = buffer.read_int<uint16_t>(0, swap_endian);
+        offset += 2;
+
+        int64_t width = -1;
+        int64_t height = -1;
+        for (uint16_t i = 0; i < num_entry && (width == -1 || height == -1); ++i, offset += 12) {
+            if (uint64_t(length) < uint64_t(offset) + 12) {
+                return false;
             }
-        } else if (tag == 257) {  // Found ImageHeight entry
-            if (type == 3) {
-                height = buffer.read_int<uint16_t>(8, swap_endian);
-            } else if (type == 4) {
-                height = buffer.read_int<uint32_t>(8, swap_endian);
+            buffer = ri.read_buffer(offset, 12);
+
+            auto tag = buffer.read_int<uint16_t>(0, swap_endian);
+            auto type = buffer.read_int<uint16_t>(2, swap_endian);
+
+            if (tag == 256) {  // Found ImageWidth entry
+                if (type == 3) {
+                    width = buffer.read_int<uint16_t>(8, swap_endian);
+                } else if (type == 4) {
+                    width = buffer.read_int<uint32_t>(8, swap_endian);
+                }
+            } else if (tag == 257) {  // Found ImageHeight entry
+                if (type == 3) {
+                    height = buffer.read_int<uint16_t>(8, swap_endian);
+                } else if (type == 4) {
+                    height = buffer.read_int<uint32_t>(8, swap_endian);
+                }
             }
         }
-    }
 
-    bool ok = width != -1 && height != -1;
-    if (ok) {
-        info = ImageInfo(kFormatTiff, "tiff", "tiff", "image/tiff");
-        info.set_size(width, height);
+        bool ok = width != -1 && height != -1;
+        if (ok) {
+            info = ImageInfo(kFormatTiff, "tiff", "tiff", "image/tiff");
+            info.set_size(width, height);
+        }
+        return ok;
+    } else if (tiff_version == 0x2B) {
+        if (length < 16) {
+            return false;
+        }
+        auto byte_size = buffer.read_int<uint16_t>(4, swap_endian);
+        auto zero = buffer.read_int<uint16_t>(6, swap_endian);
+        if (byte_size != 8 || zero != 0) {
+            return false;
+        }
+        buffer = ri.read_buffer(8, 8);
+        auto offset = buffer.read_int<uint64_t>(0, swap_endian);
+        if (uint64_t(length) < offset + 8 || offset > std::numeric_limits<off_t>::max() - 8) {
+            return false;
+        }
+        buffer = ri.read_buffer((off_t)offset, 8);
+        auto num_entry = buffer.read_int<uint64_t>(0, swap_endian);
+        offset += 8;
+
+        int64_t width = -1;
+        int64_t height = -1;
+        for (uint64_t i = 0; i < num_entry && (width == -1 || height == -1); ++i, offset += 20) {
+            if (uint64_t(length) < offset + 20 || offset > std::numeric_limits<off_t>::max() - 20) {
+                return false;
+            }
+            buffer = ri.read_buffer((off_t)offset, 20);
+
+            auto tag = buffer.read_int<uint16_t>(0, swap_endian);
+            auto type = buffer.read_int<uint16_t>(2, swap_endian);
+
+            if (tag == 256) {  // Found ImageWidth entry
+                if (type == 3) {
+                    width = buffer.read_int<uint16_t>(12, swap_endian);
+                } else if (type == 4) {
+                    width = buffer.read_int<uint32_t>(12, swap_endian);
+                } else if (type == 16) {
+                    auto w = buffer.read_int<uint64_t>(12, swap_endian);
+                    if (w > std::numeric_limits<int64_t>::max()) {
+                        // TODO: Size > INT64_MAX is not supported
+                        return false;
+                    }
+                    width = (int64_t)w;
+                }
+            } else if (tag == 257) {  // Found ImageHeight entry
+                if (type == 3) {
+                    height = buffer.read_int<uint16_t>(12, swap_endian);
+                } else if (type == 4) {
+                    height = buffer.read_int<uint32_t>(12, swap_endian);
+                } else if (type == 16) {
+                    auto h = buffer.read_int<uint64_t>(12, swap_endian);
+                    if (h > std::numeric_limits<int64_t>::max()) {
+                        // TODO: Size > INT64_MAX is not supported
+                        return false;
+                    }
+                    height = (int64_t)h;
+                }
+            }
+        }
+
+        bool ok = width != -1 && height != -1;
+        if (ok) {
+            info = ImageInfo(kFormatTiff, "tiff", "tiff", "image/tiff");
+            info.set_size(width, height);
+        }
+        return ok;
+    } else {
+        return false;
     }
-    return ok;
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

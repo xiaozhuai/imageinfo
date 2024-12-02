@@ -116,6 +116,9 @@ int main() {
         ASSET_II(IMAGES_DIR "valid/tiff/big-endian.tiff", kNoError, kFormatTiff, 123l, 456l);
         ASSET_II(IMAGES_DIR "valid/tiff/jpeg.tiff", kNoError, kFormatTiff, 123l, 456l);
         ASSET_II(IMAGES_DIR "valid/tiff/little-endian.tiff", kNoError, kFormatTiff, 123l, 456l);
+        ASSET_II(IMAGES_DIR "valid/tiff/BigTIFF.tif", kNoError, kFormatTiff, 64l, 64l);
+        ASSET_II(IMAGES_DIR "valid/tiff/BigTIFFLong.tif", kNoError, kFormatTiff, 64l, 64l);
+        ASSET_II(IMAGES_DIR "valid/tiff/BigTIFFMotorola.tif", kNoError, kFormatTiff, 64l, 64l);
     }
 
     {
