@@ -14,16 +14,21 @@ jobs:
                 uses: actions/checkout@v4
                 with:
                     submodules: recursive
-            -   name: Install clang-format-18
-                run: |
-                    sudo apt-get update
-                    sudo apt-get install clang-format-18
-                    sudo ln -s -f /usr/bin/clang-format-18 /usr/bin/clang-format
-                    clang-format --version
-            -   name: Check code style
-                run: |
-                    cmake -B build .
-                    cmake --build build -- check-format
+            - name: Install clang-format-21
+              run: |
+                  UBUNTU_CODENAME=$(. /etc/os-release && echo $VERSION_CODENAME)
+                  CLANG_FORMAT_VERSION=21
+                  wget -qO- https://apt.llvm.org/llvm-snapshot.gpg.key | sudo tee /etc/apt/trusted.gpg.d/apt.llvm.org.asc
+                  echo "deb http://apt.llvm.org/${UBUNTU_CODENAME}/ llvm-toolchain-${UBUNTU_CODENAME}-${CLANG_FORMAT_VERSION} main" | sudo tee /etc/apt/sources.list.d/llvm.list
+                  echo "deb-src http://apt.llvm.org/${UBUNTU_CODENAME}/ llvm-toolchain-${UBUNTU_CODENAME}-${CLANG_FORMAT_VERSION} main" | sudo tee -a /etc/apt/sources.list.d/llvm.list
+                  sudo apt-get update
+                  sudo apt-get install clang-format-${CLANG_FORMAT_VERSION}
+                  sudo ln -s -f /usr/bin/clang-format-${CLANG_FORMAT_VERSION} /usr/bin/clang-format
+                  clang-format --version
+            - name: Check code style
+              run: |
+                  cmake -B build .
+                  cmake --build build --target check-format
 
     windows:
         needs: code-style
@@ -31,8 +36,8 @@ jobs:
         strategy:
             matrix:
                 runner:
-                    - windows-2019
                     - windows-2022
+                    - windows-2025
                 arch:
                     - amd64
                     - x86
@@ -49,12 +54,12 @@ jobs:
                 shell: cmd
                 run: |
                     cmake -GNinja -B build .
-                    cmake --build build -- all
+                    cmake --build build --target all
             -   name: Test
                 if: ${{ matrix.arch != 'amd64_arm64' }}
                 shell: cmd
                 run: |
-                    cmake --build build -- check
+                    cmake --build build --target check
 
     macos:
         needs: code-style
@@ -62,9 +67,9 @@ jobs:
         strategy:
             matrix:
                 runner:
-                    - macos-12
                     - macos-13
                     - macos-14
+                    - macos-15
                 arch:
                     - x86_64
                     - arm64
@@ -76,11 +81,11 @@ jobs:
             -   name: Build
                 run: |
                     cmake -DCMAKE_OSX_ARCHITECTURES=${{matrix.arch}} -B build .
-                    cmake --build build -- all
+                    cmake --build build --target all
             -   name: Test
                 if: ${{ matrix.runner == 'macos-14' || matrix.arch != 'arm64' }}
                 run: |
-                    cmake --build build -- check
+                    cmake --build build --target check
 
     linux:
         needs: code-style
@@ -88,7 +93,6 @@ jobs:
         strategy:
             matrix:
                 runner:
-                    - ubuntu-20.04
                     - ubuntu-22.04
                     - ubuntu-24.04
         steps:
@@ -99,7 +103,7 @@ jobs:
             -   name: Build
                 run: |
                     cmake -B build .
-                    cmake --build build -- all
+                    cmake --build build --target all
             -   name: Test
                 run: |
-                    cmake --build build -- check
+                    cmake --build build --target check
