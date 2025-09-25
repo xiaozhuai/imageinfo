@@ -48,7 +48,9 @@ int main() {
         ASSET_II(IMAGES_DIR "valid/bmp/sample2.bmp", kNoError, kFormatBmp, 123l, 456l);
     }
 
-    { ASSET_II(IMAGES_DIR "valid/cur/sample.cur", kNoError, kFormatCur, 32l, 32l); }
+    {
+        ASSET_II(IMAGES_DIR "valid/cur/sample.cur", kNoError, kFormatCur, 32l, 32l);
+    }
 
     {
         ASSET_II(IMAGES_DIR "valid/ico/multi-size.ico", kNoError, kFormatIco, 256l, 256l);
@@ -59,16 +61,22 @@ int main() {
         ASSET_II(IMAGES_DIR "valid/ico/sample-compressed.ico", kNoError, kFormatIco, 32l, 32l);
     }
 
-    { ASSET_II(IMAGES_DIR "valid/dds/sample.dds", kNoError, kFormatDds, 123l, 456l); }
+    {
+        ASSET_II(IMAGES_DIR "valid/dds/sample.dds", kNoError, kFormatDds, 123l, 456l);
+    }
 
-    { ASSET_II(IMAGES_DIR "valid/gif/sample.gif", kNoError, kFormatGif, 123l, 456l); }
+    {
+        ASSET_II(IMAGES_DIR "valid/gif/sample.gif", kNoError, kFormatGif, 123l, 456l);
+    }
 
     {
         ASSET_II(IMAGES_DIR "valid/hdr/sample.hdr", kNoError, kFormatHdr, 123l, 456l);
         ASSET_II(IMAGES_DIR "valid/hdr/sample2.hdr", kNoError, kFormatHdr, 1024l, 512l);
     }
 
-    { ASSET_II(IMAGES_DIR "valid/icns/sample.icns", kNoError, kFormatIcns, 128l, 128l); }
+    {
+        ASSET_II(IMAGES_DIR "valid/icns/sample.icns", kNoError, kFormatIcns, 128l, 128l);
+    }
 
     {
         ASSET_II(IMAGES_DIR "valid/j2k/balloon.j2k", kNoError, kFormatJ2k, 2717l, 3701l);
@@ -82,9 +90,13 @@ int main() {
         ASSET_II(IMAGES_DIR "valid/jp2/jpx_disguised_as_jp2.jp2", kNoError, kFormatJp2, 2717l, 3701l);
     }
 
-    { ASSET_II(IMAGES_DIR "valid/jph/byte.jph", kNoError, kFormatJph, 20l, 20l); }
+    {
+        ASSET_II(IMAGES_DIR "valid/jph/byte.jph", kNoError, kFormatJph, 20l, 20l);
+    }
 
-    { ASSET_II(IMAGES_DIR "valid/jpx/sample.jpx", kNoError, kFormatJpx, 2717l, 3701l); }
+    {
+        ASSET_II(IMAGES_DIR "valid/jpx/sample.jpx", kNoError, kFormatJpx, 2717l, 3701l);
+    }
 
     {
         ASSET_II(IMAGES_DIR "valid/jpg/1x2-flipped-big-endian.jpg", kNoError, kFormatJpeg, 2l, 1l);
@@ -99,7 +111,9 @@ int main() {
         ASSET_II(IMAGES_DIR "valid/jpg/rotation-90.jpg", kNoError, kFormatJpeg, 3024l, 4032l);
     }
 
-    { ASSET_II(IMAGES_DIR "valid/ktx/sample.ktx", kNoError, kFormatKtx, 123l, 456l); }
+    {
+        ASSET_II(IMAGES_DIR "valid/ktx/sample.ktx", kNoError, kFormatKtx, 123l, 456l);
+    }
 
     {
         ASSET_II(IMAGES_DIR "valid/png/sample.png", kNoError, kFormatPng, 123l, 456l);
@@ -108,9 +122,13 @@ int main() {
         ASSET_II(IMAGES_DIR "invalid/sample.png", kUnrecognizedFormat, kFormatUnknown, -1l, -1l);
     }
 
-    { ASSET_II(IMAGES_DIR "valid/psd/sample.psd", kNoError, kFormatPsd, 123l, 456l); }
+    {
+        ASSET_II(IMAGES_DIR "valid/psd/sample.psd", kNoError, kFormatPsd, 123l, 456l);
+    }
 
-    { ASSET_II(IMAGES_DIR "valid/qoi/sample.qoi", kNoError, kFormatQoi, 123l, 456l); }
+    {
+        ASSET_II(IMAGES_DIR "valid/qoi/sample.qoi", kNoError, kFormatQoi, 123l, 456l);
+    }
 
     {
         ASSET_II(IMAGES_DIR "valid/tiff/big-endian.tiff", kNoError, kFormatTiff, 123l, 456l);
@@ -127,7 +145,9 @@ int main() {
         ASSET_II(IMAGES_DIR "valid/webp/lossy.webp", kNoError, kFormatWebp, 123l, 456l);
     }
 
-    { ASSET_II(IMAGES_DIR "valid/tga/sample.tga", kNoError, kFormatTga, 123l, 456l); }
+    {
+        ASSET_II(IMAGES_DIR "valid/tga/sample.tga", kNoError, kFormatTga, 123l, 456l);
+    }
 
     {
         // These files are from @chan233
