@@ -66,7 +66,7 @@ if (IMAGEINFO_BUILD_INSTALL)
 endif ()
 
 if (IMAGEINFO_IS_MASTER_PROJECT)
-    find_program(CLANG_FORMAT clang-format)
+    find_program(CLANG_FORMAT clang-format NO_CMAKE_PATH)
     if (CLANG_FORMAT)
         set(ALL_SOURCES include/imageinfo.hpp cli/main.cpp tests/tests.cpp)
         add_custom_target(
