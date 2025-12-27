@@ -67,7 +67,6 @@ jobs:
         strategy:
             matrix:
                 runner:
-                    - macos-13
                     - macos-14
                     - macos-15
                 arch:
