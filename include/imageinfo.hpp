@@ -219,7 +219,7 @@ public:
     inline size_t size() const { return data_.length; }
 
     inline void read(void *buf, off_t offset, size_t size) const {
-        assert(offset >= 0 && offset + size <= data_.length);
+        assert(offset >= 0 && size <= data_.length && (size_t)offset <= data_.length - size);
         memcpy(buf, ((char *)data_.data) + offset, size);
     }
 
