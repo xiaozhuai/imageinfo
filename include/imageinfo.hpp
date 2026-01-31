@@ -218,7 +218,10 @@ public:
 
     inline size_t size() const { return data_.length; }
 
-    inline void read(void *buf, off_t offset, size_t size) const { memcpy(buf, ((char *)data_.data) + offset, size); }
+    inline void read(void *buf, off_t offset, size_t size) const {
+        assert(offset >= 0 && size <= data_.length && (size_t)offset <= data_.length - size);
+        memcpy(buf, ((char *)data_.data) + offset, size);
+    }
 
 private:
     RawData data_;
@@ -241,9 +244,9 @@ public:
 
     inline size_t size() const { return size_; }
 
-    inline uint8_t &operator[](int offset) { return data_.get()[offset]; }
+    inline uint8_t &operator[](size_t offset) { return data_.get()[offset]; }
 
-    inline uint8_t operator[](int offset) const { return data_.get()[offset]; }
+    inline uint8_t operator[](size_t offset) const { return data_.get()[offset]; }
 
 public:
     inline uint8_t read_u8(off_t offset) { return read_int<uint8_t>(offset, false); }
@@ -549,17 +552,17 @@ inline bool try_avif_heic(ReadInterface &ri, size_t length, ImageInfo &info) {
             uint16_t entry_count = buffer.read_u16_be(offset + 14);
             off_t t = offset + 16;
             for (uint16_t i = 0; i < entry_count; ++i) {
-                if (box_size < 18) {
+                if (t + 2 > offset + box_size) {
                     return false;
                 }
                 uint16_t item_id = buffer.read_u16_be(t);
                 t += 2;
-                if (box_size < 19) {
+                if (t + 1 > offset + box_size) {
                     return false;
                 }
                 uint8_t index_count = buffer.read_u8(t);
                 t += 1;
-                if (box_size < 19 + index_count) {
+                if (t + index_count > offset + box_size) {
                     return false;
                 }
                 std::unordered_set<uint8_t> indices;
@@ -700,7 +703,7 @@ inline bool try_cur_ico(ReadInterface &ri, size_t length, ImageInfo &info) {
         int64_t h2 = h1 == 0 ? 256 : h1;
         sizes.emplace_back(w2, h2);
 
-        uint32_t bytes = buffer.read_s32_le(i * entry_size + 8);
+        uint32_t bytes = buffer.read_u32_le(i * entry_size + 8);
         offset += bytes;
     }
 
@@ -1057,7 +1060,7 @@ inline bool try_jpg(ReadInterface &ri, size_t length, ImageInfo &info) {
                 }
                 auto ifd_main_entries_count = buffer.read_int<uint16_t>(first_ifd_offset + 10, big_endian);
                 for (uint16_t i = 0; i < ifd_main_entries_count; ++i) {
-                    off_t entry_offset = first_ifd_offset + 12 + i * 12;
+                    off_t entry_offset = first_ifd_offset + 12 + (off_t)i * 12;
                     if (entry_offset + 12 > section_size + 2) {
                         return false;
                     }
