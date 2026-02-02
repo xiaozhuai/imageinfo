@@ -52,8 +52,8 @@ vcpgk install imageinfo
 
 ```shell
 cmake -B build .
-cmake --build build -- all
-cmake --build build -- check
+cmake --build build --target all
+cmake --build build --target check
 ```
 
 ### Windows
@@ -62,8 +62,8 @@ Open Visual Studio Command Prompt and run these command
 
 ```cmd
 cmake -G "NMake Makefiles" -B build .
-cmake --build build -- all
-cmake --build build -- check
+cmake --build build --target all
+cmake --build build --target check
 ```
 
 ## Usage

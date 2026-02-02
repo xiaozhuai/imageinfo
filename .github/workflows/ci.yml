@@ -39,7 +39,7 @@ jobs:
                     - windows-2022
                     - windows-2025
                 arch:
-                    - amd64
+                    - x64
                     - x86
                     - amd64_arm64
         steps:
@@ -47,7 +47,7 @@ jobs:
                 uses: actions/checkout@v4
                 with:
                     submodules: recursive
-            -   uses: ilammy/msvc-dev-cmd@v1
+            -   uses: TheMrMilchmann/setup-msvc-dev@v4
                 with:
                     arch: ${{ matrix.arch }}
             -   name: Build

@@ -31,21 +31,19 @@ endif ()
 if (IMAGEINFO_BUILD_TESTS)
     enable_testing()
 
+    if (CMAKE_CONFIGURATION_TYPES)
+        add_custom_target(check COMMAND ${CMAKE_CTEST_COMMAND} --output-on-failure -C "$<CONFIGURATION>")
+    else ()
+        add_custom_target(check COMMAND ${CMAKE_CTEST_COMMAND} --output-on-failure)
+    endif ()
+
     add_executable(imageinfo_tests tests/tests.cpp)
     target_link_libraries(imageinfo_tests PRIVATE imageinfo)
     target_compile_definitions(imageinfo_tests PRIVATE
             -DIMAGES_DIR="${CMAKE_CURRENT_SOURCE_DIR}/images/"
     )
     add_test(NAME imageinfo_tests COMMAND imageinfo_tests)
-
-    if (CMAKE_CONFIGURATION_TYPES)
-        add_custom_target(check COMMAND ${CMAKE_CTEST_COMMAND}
-                --force-new-ctest-process --output-on-failure
-                --build-config "$<CONFIGURATION>")
-    else ()
-        add_custom_target(check COMMAND ${CMAKE_CTEST_COMMAND}
-                --force-new-ctest-process --output-on-failure)
-    endif ()
+    add_dependencies(check imageinfo_tests)
 endif ()
 
 if (IMAGEINFO_BUILD_INSTALL)
