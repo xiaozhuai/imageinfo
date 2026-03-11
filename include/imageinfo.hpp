@@ -287,7 +287,10 @@ public:
 
     inline std::string to_string() { return std::string((char *)data(), size()); }
 
-    inline bool cmp(off_t offset, size_t size, const void *buf) { return memcmp(data() + offset, buf, size) == 0; }
+    inline bool cmp(off_t offset, size_t size, const void *buf) {
+        if (offset < 0 || (size_t)offset + size > size_) return false;
+        return memcmp(data() + offset, buf, size) == 0;
+    }
 
     inline bool cmp_any_of(off_t offset, size_t size, const std::initializer_list<const void *> &bufs) {
         return std::any_of(bufs.begin(), bufs.end(),
