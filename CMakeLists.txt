@@ -4,9 +4,9 @@ project(imageinfo)
 set(CMAKE_CXX_STANDARD 11)
 
 set(IMAGEINFO_IS_MASTER_PROJECT OFF)
-if (${CMAKE_SOURCE_DIR} STREQUAL ${CMAKE_CURRENT_SOURCE_DIR})
+if(${CMAKE_SOURCE_DIR} STREQUAL ${CMAKE_CURRENT_SOURCE_DIR})
     set(IMAGEINFO_IS_MASTER_PROJECT ON)
-endif ()
+endif()
 
 option(IMAGEINFO_BUILD_TOOLS "Build tools" ${IMAGEINFO_IS_MASTER_PROJECT})
 option(IMAGEINFO_BUILD_TESTS "Build tests" ${IMAGEINFO_IS_MASTER_PROJECT})
@@ -18,64 +18,64 @@ add_library(imageinfo::imageinfo ALIAS imageinfo)
 include(GNUInstallDirs)
 
 target_include_directories(imageinfo INTERFACE
-        "$<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/include>"
-        "$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>"
+    "$<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/include>"
+    "$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>"
 )
 
-if (IMAGEINFO_BUILD_TOOLS)
+if(IMAGEINFO_BUILD_TOOLS)
     add_executable(imageinfo_cli cli/main.cpp)
     target_link_libraries(imageinfo_cli PRIVATE imageinfo)
     set_target_properties(imageinfo_cli PROPERTIES OUTPUT_NAME "imageinfo")
-endif ()
+endif()
 
-if (IMAGEINFO_BUILD_TESTS)
+if(IMAGEINFO_BUILD_TESTS)
     enable_testing()
 
-    if (CMAKE_CONFIGURATION_TYPES)
+    if(CMAKE_CONFIGURATION_TYPES)
         add_custom_target(check COMMAND ${CMAKE_CTEST_COMMAND} --output-on-failure -C "$<CONFIGURATION>")
-    else ()
+    else()
         add_custom_target(check COMMAND ${CMAKE_CTEST_COMMAND} --output-on-failure)
-    endif ()
+    endif()
 
     add_executable(imageinfo_tests tests/tests.cpp)
     target_link_libraries(imageinfo_tests PRIVATE imageinfo)
     target_compile_definitions(imageinfo_tests PRIVATE
-            -DIMAGES_DIR="${CMAKE_CURRENT_SOURCE_DIR}/images/"
+        -DIMAGES_DIR="${CMAKE_CURRENT_SOURCE_DIR}/images/"
     )
     add_test(NAME imageinfo_tests COMMAND imageinfo_tests)
     add_dependencies(check imageinfo_tests)
-endif ()
+endif()
 
-if (IMAGEINFO_BUILD_INSTALL)
+if(IMAGEINFO_BUILD_INSTALL)
     install(TARGETS imageinfo EXPORT imageinfo)
     install(
-            FILES "${CMAKE_CURRENT_SOURCE_DIR}/include/imageinfo.hpp"
-            DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}"
+        FILES "${CMAKE_CURRENT_SOURCE_DIR}/include/imageinfo.hpp"
+        DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}"
     )
     install(
-            EXPORT imageinfo
-            FILE imageinfo-config.cmake
-            DESTINATION "${CMAKE_INSTALL_DATAROOTDIR}/imageinfo"
-            NAMESPACE imageinfo::
+        EXPORT imageinfo
+        FILE "imageinfo-config.cmake"
+        DESTINATION "${CMAKE_INSTALL_DATAROOTDIR}/imageinfo"
+        NAMESPACE imageinfo::
     )
-    if (IMAGEINFO_BUILD_TOOLS)
+    if(IMAGEINFO_BUILD_TOOLS)
         install(TARGETS imageinfo_cli)
-    endif ()
-endif ()
+    endif()
+endif()
 
-if (IMAGEINFO_IS_MASTER_PROJECT)
+if(IMAGEINFO_IS_MASTER_PROJECT)
     find_program(CLANG_FORMAT clang-format NO_CMAKE_PATH)
-    if (CLANG_FORMAT)
+    if(CLANG_FORMAT)
         set(ALL_SOURCES include/imageinfo.hpp cli/main.cpp tests/tests.cpp)
         add_custom_target(
-                format
-                COMMAND "${CLANG_FORMAT}" -i --verbose ${ALL_SOURCES}
-                WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
+            format
+            COMMAND "${CLANG_FORMAT}" -i --verbose ${ALL_SOURCES}
+            WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
         )
         add_custom_target(
-                check-format
-                COMMAND "${CLANG_FORMAT}" --dry-run --Werror --verbose ${ALL_SOURCES}
-                WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
+            check-format
+            COMMAND "${CLANG_FORMAT}" --dry-run --Werror --verbose ${ALL_SOURCES}
+            WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
         )
-    endif ()
-endif ()
+    endif()
+endif()
